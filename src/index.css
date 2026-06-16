@@ -13,6 +13,8 @@
   --theme-primary: #dc2626; /* Default: Kai Red */
   --theme-shadow: #991b1b;
   --theme-light: #fca5a5;
+  --theme-text: white;
+  --theme-text-accent: var(--theme-primary);
 
   font-family: 'Inter', sans-serif;
   color: var(--text-dark);
@@ -67,6 +69,15 @@ body {
   --bg-dark: #020617;
   --stripe-color: rgba(255, 255, 255, 0.03);
 }
+.theme-zane {
+  --theme-primary: #ffffff;
+  --theme-shadow: #cbd5e1;
+  --theme-light: #f8fafc;
+  --bg-dark: #f1f5f9;
+  --stripe-color: rgba(0, 0, 0, 0.05);
+  --theme-text: #1e293b;
+  --theme-text-accent: #475569;
+}
 
 .lego-panel {
   background: var(--parchment);
@@ -96,7 +107,7 @@ body {
   font-family: 'Bangers', cursive;
   font-size: 3.5rem;
   letter-spacing: 2px;
-  color: var(--theme-primary);
+  color: var(--theme-text-accent);
   text-shadow: 2px 2px 0 var(--gold), 4px 4px 0 var(--theme-shadow);
   margin-bottom: 0.5rem;
   text-align: center;
@@ -132,7 +143,7 @@ body {
 }
 
 .array-label {
-  color: var(--theme-primary);
+  color: var(--text-dark);
 }
 
 .array-values {
@@ -146,7 +157,7 @@ body {
 .operation-type {
   display: inline-block;
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text);
   padding: 0.5rem 1.5rem;
   border-radius: 4px;
   font-family: 'Bangers', cursive;
@@ -192,7 +203,7 @@ body {
 /* Lego Brick Button Style */
 .btn-primary {
   background: var(--theme-primary);
-  color: white;
+  color: var(--theme-text);
   box-shadow: 0 6px 0 var(--theme-shadow), inset 0 2px 0 rgba(255,255,255,0.3);
 }
 
@@ -259,6 +270,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  align-items: center;
 }
 
 .answer-box {
@@ -278,7 +290,7 @@ body {
 }
 
 .answer-box:focus {
-  border-color: var(--theme-primary);
+  border-color: var(--theme-text-accent);
 }
 
 .tab-switcher {
@@ -313,7 +325,7 @@ body {
 .tab-btn.active {
   background: var(--theme-primary);
   border-color: var(--theme-shadow);
-  color: white;
+  color: var(--theme-text);
   transform: translateY(4px);
   border-bottom-width: 4px;
 }
@@ -347,7 +359,7 @@ body {
 }
 
 .formula-input:focus {
-  border-color: var(--theme-primary);
+  border-color: var(--theme-text-accent);
 }
 
 .formula-input.shift {

@@ -7,7 +7,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie';
+type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie' | 'kwantyzacja';
 
 interface Complex {
   re: number;
@@ -75,6 +75,21 @@ interface AppState {
   probkowanieF_in: number;
   probkowanieF_s: number;
   userProbkowanieAliasingAnswer: string;
+
+  // Kwantyzacja mode
+  isCorrect_kwantyzacjaKrok: boolean | null;
+  showSolution_kwantyzacjaKrok: boolean;
+  showHelp_kwantyzacjaKrok: boolean;
+  kwantyzacjaUmin: number;
+  kwantyzacjaUmax: number;
+  kwantyzacjaBitsKrok: number;
+  userKwantyzacjaKrok: string;
+
+  isCorrect_kwantyzacjaSqnr: boolean | null;
+  showSolution_kwantyzacjaSqnr: boolean;
+  showHelp_kwantyzacjaSqnr: boolean;
+  kwantyzacjaSqnrBits: number;
+  userKwantyzacjaSqnr: string;
 }
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -265,6 +280,12 @@ function App() {
     
     isCorrect_aliasing: null, showSolution_aliasing: false, showHelp_aliasing: false,
     probkowanieF_in: 0, probkowanieF_s: 0, userProbkowanieAliasingAnswer: '',
+    
+    isCorrect_kwantyzacjaKrok: null, showSolution_kwantyzacjaKrok: false, showHelp_kwantyzacjaKrok: false,
+    kwantyzacjaUmin: 0, kwantyzacjaUmax: 0, kwantyzacjaBitsKrok: 0, userKwantyzacjaKrok: '',
+    
+    isCorrect_kwantyzacjaSqnr: null, showSolution_kwantyzacjaSqnr: false, showHelp_kwantyzacjaSqnr: false,
+    kwantyzacjaSqnrBits: 0, userKwantyzacjaSqnr: '',
   });
 
   const generateProblem = (modeOverride?: AppMode) => {
@@ -330,6 +351,20 @@ function App() {
         probkowanieF_s: getRandomInt(4, 9) * 10,
         userProbkowanieAliasingAnswer: '',
         isCorrect_aliasing: null, showSolution_aliasing: false, showHelp_aliasing: false,
+      }));
+    } else if (currentMode === 'kwantyzacja') {
+      setState(s => ({
+        ...s,
+        mode: 'kwantyzacja',
+        kwantyzacjaUmin: getRandomInt(-10, -1),
+        kwantyzacjaUmax: getRandomInt(1, 10),
+        kwantyzacjaBitsKrok: getRandomInt(3, 10),
+        userKwantyzacjaKrok: '',
+        isCorrect_kwantyzacjaKrok: null, showSolution_kwantyzacjaKrok: false, showHelp_kwantyzacjaKrok: false,
+        
+        kwantyzacjaSqnrBits: getRandomInt(6, 16),
+        userKwantyzacjaSqnr: '',
+        isCorrect_kwantyzacjaSqnr: null, showSolution_kwantyzacjaSqnr: false, showHelp_kwantyzacjaSqnr: false,
       }));
     }
   };
@@ -414,12 +449,31 @@ function App() {
       }
       const correct = Math.abs(state.probkowanieF_in - state.probkowanieF_s * Math.round(state.probkowanieF_in / state.probkowanieF_s));
       setState(s => ({ ...s, isCorrect_aliasing: parsed === correct }));
+    } else if (taskType === 'kwantyzacjaKrok') {
+      const parsed = parseFloat(state.userKwantyzacjaKrok.trim().replace(',', '.'));
+      if (isNaN(parsed)) {
+        alert('Wpisz poprawną liczbę.');
+        return;
+      }
+      const correct = (state.kwantyzacjaUmax - state.kwantyzacjaUmin) / Math.pow(2, state.kwantyzacjaBitsKrok);
+      const isMatch = Math.abs(parsed - correct) < 0.05;
+      setState(s => ({ ...s, isCorrect_kwantyzacjaKrok: isMatch }));
+    } else if (taskType === 'kwantyzacjaSqnr') {
+      const parsed = parseFloat(state.userKwantyzacjaSqnr.trim().replace(',', '.'));
+      if (isNaN(parsed)) {
+        alert('Wpisz poprawną liczbę.');
+        return;
+      }
+      const correct = 6.02 * state.kwantyzacjaSqnrBits + 1.76;
+      const isMatch = Math.abs(parsed - correct) < 0.5; // tolerancja na przyblizenia np x6 zamiast x6.02
+      setState(s => ({ ...s, isCorrect_kwantyzacjaSqnr: isMatch }));
     }
   };
   let themeClass = 'theme-kai';
   if (state.mode === 'suma') themeClass = 'theme-jay';
   if (state.mode === 'fourier') themeClass = 'theme-lloyd';
   if (state.mode === 'probkowanie') themeClass = 'theme-cole';
+  if (state.mode === 'kwantyzacja') themeClass = 'theme-zane';
 
   useEffect(() => {
     document.body.className = themeClass;
@@ -430,6 +484,7 @@ function App() {
   if (state.mode === 'suma' && state.sumaX_wzor.length === 0) return null;
   if (state.mode === 'fourier' && state.fourierX_dft.length === 0) return null;
   if (state.mode === 'probkowanie' && state.probkowanieF1 === 0) return null;
+  if (state.mode === 'kwantyzacja' && state.kwantyzacjaBitsKrok === 0) return null;
 
   return (
     <div className={cn("theme-container", themeClass)}>
@@ -449,6 +504,9 @@ function App() {
           </button>
           <button className={cn("tab-btn", state.mode === 'probkowanie' && "active")} onClick={() => switchMode('probkowanie')}>
             <NinjaIcon color="#334155" darkColor="#0f172a" /> Próbkowanie
+          </button>
+          <button className={cn("tab-btn", state.mode === 'kwantyzacja' && "active")} onClick={() => switchMode('kwantyzacja')}>
+            <NinjaIcon color="#e2e8f0" darkColor="#64748b" /> Kwantyzacja
           </button>
         </div>
 
@@ -685,7 +743,7 @@ function App() {
                 <div className="answers-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
                   {state.userFourierAnswers.map((val, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.25rem', width: '3rem', fontWeight: 800 }}>X[{idx}] = </span>
+                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.25rem', width: '4.5rem', fontWeight: 800, whiteSpace: 'nowrap' }}>X[{idx}] = </span>
                       <input type="text" style={{ width: '8rem' }} className="answer-box" value={val}
                         onChange={(e) => { const newAns = [...state.userFourierAnswers]; newAns[idx] = e.target.value; setState(s => ({ ...s, userFourierAnswers: newAns, isCorrect_dft: null })); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCheck('dft'); }} />
@@ -737,7 +795,7 @@ function App() {
                 <div className="answers-row">
                   {state.userFourierAnswersIDFT.map((val, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.15rem', fontWeight: 800 }}>x[{idx}]=</span>
+                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap' }}>x[{idx}]=</span>
                       <input type="text" className="answer-box" style={{ width: '4rem', height: '3.5rem', fontSize: '1.25rem' }} value={val}
                         onChange={(e) => { const newAns = [...state.userFourierAnswersIDFT]; newAns[idx] = e.target.value; setState(s => ({ ...s, userFourierAnswersIDFT: newAns, isCorrect_idft: null })); }}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleCheck('idft'); }} />
@@ -861,6 +919,99 @@ function App() {
               {state.showSolution_aliasing && (
                 <div className="solution-box" style={{ marginTop: '1rem' }}>
                   <span>Odpowiedź: f<sub>alias</sub> = {Math.abs(state.probkowanieF_in - state.probkowanieF_s * Math.round(state.probkowanieF_in / state.probkowanieF_s))} Hz</span>
+                </div>
+              )}
+            </TaskSection>
+          </>
+        )}
+
+        {/* ----------------- KWANTYZACJA ----------------- */}
+        {state.mode === 'kwantyzacja' && (
+          <>
+            {/* Krok Task */}
+            <TaskSection>
+              <div className="card">
+                <div className="operation-type">1. Krok Kwantyzacji (Rozdzielczość)</div>
+                <div className="array-display">
+                  <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                    Zakres Napięć: [{state.kwantyzacjaUmin} V, {state.kwantyzacjaUmax} V], Liczba bitów b = {state.kwantyzacjaBitsKrok}
+                  </span>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>Oblicz krok kwantyzacji Δ.</p>
+              </div>
+              <div className="input-group">
+                <div className="answers-row">
+                  <span style={{ fontWeight: 800, fontSize: '1.5rem', color: 'var(--text-dark)' }}>Δ ≈ </span>
+                  <input type="text" className="answer-box" style={{ width: '8rem' }} value={state.userKwantyzacjaKrok || ''}
+                    onChange={(e) => setState(s => ({ ...s, userKwantyzacjaKrok: e.target.value, isCorrect_kwantyzacjaKrok: null }))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCheck('kwantyzacjaKrok')} />
+                  <span style={{ alignSelf: 'center', fontWeight: 800, fontSize: '1.25rem' }}>V</span>
+                </div>
+              </div>
+
+              <TaskControls 
+                onCheck={() => handleCheck('kwantyzacjaKrok')}
+                showSolution={state.showSolution_kwantyzacjaKrok} onToggleSolution={() => setState(s => ({ ...s, showSolution_kwantyzacjaKrok: !s.showSolution_kwantyzacjaKrok }))}
+                showHelp={state.showHelp_kwantyzacjaKrok} onToggleHelp={() => setState(s => ({ ...s, showHelp_kwantyzacjaKrok: !s.showHelp_kwantyzacjaKrok }))}
+              />
+              <TaskResult isCorrect={state.isCorrect_kwantyzacjaKrok} />
+
+              {state.showHelp_kwantyzacjaKrok && (
+                <div className="sensei-container" style={{ marginTop: '1rem' }}>
+                  <SenseiWuIcon className="sensei-avatar" />
+                  <div className="help-box">
+                    <p>Aby obliczyć krok kwantyzacji, użyj wzoru: <strong>Δ = (U<sub>max</sub> - U<sub>min</sub>) / 2<sup>b</sup></strong>.</p>
+                    <p>Oblicz różnicę między najwyższym i najniższym napięciem, a następnie podziel przez liczbę stanów (2 do potęgi liczby bitów). Aplikacja uzna wynik za poprawny, jeśli pomylisz się o drobną część dziesiętną.</p>
+                  </div>
+                </div>
+              )}
+              {state.showSolution_kwantyzacjaKrok && (
+                <div className="solution-box" style={{ marginTop: '1rem' }}>
+                  <span>Odpowiedź: Δ ≈ {((state.kwantyzacjaUmax - state.kwantyzacjaUmin) / Math.pow(2, state.kwantyzacjaBitsKrok)).toFixed(4)} V</span>
+                </div>
+              )}
+            </TaskSection>
+
+            {/* SQNR Task */}
+            <TaskSection>
+              <div className="card">
+                <div className="operation-type">2. Stosunek Sygnału do Szumu Kwantyzacji (SQNR)</div>
+                <div className="array-display">
+                  <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                    Liczba bitów b = {state.kwantyzacjaSqnrBits}
+                  </span>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>Wyznacz teoretyczny SQNR w decybelach (dB) dla przetwornika.</p>
+              </div>
+              <div className="input-group">
+                <div className="answers-row">
+                  <span style={{ fontWeight: 800, fontSize: '1.5rem', color: 'var(--text-dark)' }}>SQNR ≈ </span>
+                  <input type="text" className="answer-box" style={{ width: '8rem' }} value={state.userKwantyzacjaSqnr || ''}
+                    onChange={(e) => setState(s => ({ ...s, userKwantyzacjaSqnr: e.target.value, isCorrect_kwantyzacjaSqnr: null }))}
+                    onKeyDown={(e) => e.key === 'Enter' && handleCheck('kwantyzacjaSqnr')} />
+                  <span style={{ alignSelf: 'center', fontWeight: 800, fontSize: '1.25rem' }}>dB</span>
+                </div>
+              </div>
+
+              <TaskControls 
+                onCheck={() => handleCheck('kwantyzacjaSqnr')}
+                showSolution={state.showSolution_kwantyzacjaSqnr} onToggleSolution={() => setState(s => ({ ...s, showSolution_kwantyzacjaSqnr: !s.showSolution_kwantyzacjaSqnr }))}
+                showHelp={state.showHelp_kwantyzacjaSqnr} onToggleHelp={() => setState(s => ({ ...s, showHelp_kwantyzacjaSqnr: !s.showHelp_kwantyzacjaSqnr }))}
+              />
+              <TaskResult isCorrect={state.isCorrect_kwantyzacjaSqnr} />
+
+              {state.showHelp_kwantyzacjaSqnr && (
+                <div className="sensei-container" style={{ marginTop: '1rem' }}>
+                  <SenseiWuIcon className="sensei-avatar" />
+                  <div className="help-box">
+                    <p>Wzór dla pełnego obciążenia to w przybliżeniu: <strong>SQNR ≈ 6.02 · b + 1.76 [dB]</strong>.</p>
+                    <p>Pomnóż liczbę bitów przez 6.02 i dodaj 1.76. Możesz też dla prostoty pomnożyć przez 6. Aplikacja zaakceptuje niewielkie przybliżenia (odchylenie o +- 0.5).</p>
+                  </div>
+                </div>
+              )}
+              {state.showSolution_kwantyzacjaSqnr && (
+                <div className="solution-box" style={{ marginTop: '1rem' }}>
+                  <span>Odpowiedź: SQNR ≈ {(6.02 * state.kwantyzacjaSqnrBits + 1.76).toFixed(2)} dB</span>
                 </div>
               )}
             </TaskSection>
