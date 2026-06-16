@@ -3,21 +3,29 @@ import { ArrowRight, CheckCircle, XCircle, RefreshCw, Eye, HelpCircle } from 'lu
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Utility for class merging if needed
 export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
 type ConvolutionType = 'Liniowy' | 'Okresowy';
+type AppMode = 'splot' | 'suma';
 
 interface AppState {
+  mode: AppMode;
+  isCorrect: boolean | null;
+  showSolution: boolean;
+  showHelp: boolean;
+
+  // Splot mode
   x: number[];
   y: number[];
   type: ConvolutionType;
   userAnswers: string[];
-  isCorrect: boolean | null;
-  showSolution: boolean;
-  showHelp: boolean;
+
+  // Suma ważona mode
+  sumaX: number[];
+  userSumaCoeffs: string[]; // input for coefficients: size = sumaX.length
+  userSumaShifts: string[];  // input for shifts: size = sumaX.length - 1 (for indices 1..N-1)
 }
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -54,38 +62,64 @@ const calculateCircularConvolution = (x: number[], y: number[]) => {
 
 function App() {
   const [state, setState] = useState<AppState>({
+    mode: 'splot',
+    isCorrect: null,
+    showSolution: false,
+    showHelp: false,
     x: [],
     y: [],
     type: 'Liniowy',
     userAnswers: [],
-    isCorrect: null,
-    showSolution: false,
-    showHelp: false,
+    sumaX: [],
+    userSumaCoeffs: [],
+    userSumaShifts: [],
   });
 
-  const generateProblem = () => {
-    // Lengths between 3 and 5
-    const lenX = getRandomInt(3, 5);
-    const lenY = getRandomInt(3, 4);
-    const type: ConvolutionType = Math.random() > 0.5 ? 'Liniowy' : 'Okresowy';
+  const generateProblem = (modeOverride?: AppMode) => {
+    const currentMode = modeOverride || state.mode;
 
-    const expectedLen = type === 'Liniowy' ? lenX + lenY - 1 : Math.max(lenX, lenY);
+    if (currentMode === 'splot') {
+      const lenX = getRandomInt(3, 5);
+      const lenY = getRandomInt(3, 4);
+      const type: ConvolutionType = Math.random() > 0.5 ? 'Liniowy' : 'Okresowy';
+      const expectedLen = type === 'Liniowy' ? lenX + lenY - 1 : Math.max(lenX, lenY);
 
-    setState({
-      x: generateArray(lenX),
-      y: generateArray(lenY),
-      type,
-      userAnswers: new Array(expectedLen).fill(''),
-      isCorrect: null,
-      showSolution: false,
-      showHelp: false,
-    });
+      setState(s => ({
+        ...s,
+        mode: 'splot',
+        x: generateArray(lenX),
+        y: generateArray(lenY),
+        type,
+        userAnswers: new Array(expectedLen).fill(''),
+        isCorrect: null,
+        showSolution: false,
+        showHelp: false,
+      }));
+    } else {
+      // Suma ważona mode
+      const lenX = getRandomInt(4, 5); // Array length 4 or 5
+      const sumaX = generateArray(lenX);
+
+      setState(s => ({
+        ...s,
+        mode: 'suma',
+        sumaX,
+        userSumaCoeffs: new Array(lenX).fill(''),
+        userSumaShifts: new Array(lenX - 1).fill(''),
+        isCorrect: null,
+        showSolution: false,
+        showHelp: false,
+      }));
+    }
   };
 
-  // Generate on first mount
   useEffect(() => {
-    generateProblem();
+    generateProblem('splot');
   }, []);
+
+  const switchMode = (mode: AppMode) => {
+    generateProblem(mode);
+  };
 
   const getCorrectAnswer = () => {
     if (state.type === 'Liniowy') {
@@ -96,21 +130,32 @@ function App() {
   };
 
   const handleCheck = () => {
-    // Parse user input from array of strings
-    const parsed = state.userAnswers.map((s) => parseInt(s.trim(), 10));
+    if (state.mode === 'splot') {
+      const parsed = state.userAnswers.map((s) => parseInt(s.trim(), 10));
+      if (parsed.some(isNaN)) {
+        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+        return;
+      }
+      const correct = getCorrectAnswer();
+      const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
+      setState(s => ({ ...s, isCorrect: isMatch }));
+    } else {
+      // Check Suma Ważona
+      const coeffs = state.userSumaCoeffs.map(s => parseInt(s.trim(), 10));
+      const shifts = state.userSumaShifts.map(s => parseInt(s.trim(), 10));
 
-    // Check if valid numbers
-    if (parsed.some(isNaN)) {
-      alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
-      return;
+      if (coeffs.some(isNaN) || shifts.some(isNaN)) {
+        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+        return;
+      }
+
+      // Check coefficients
+      const coeffsMatch = coeffs.every((val, i) => val === state.sumaX[i]);
+      // Check shifts: for term i (i starting at 1), the shift must equal i
+      const shiftsMatch = shifts.every((val, i) => val === i + 1);
+
+      setState(s => ({ ...s, isCorrect: coeffsMatch && shiftsMatch }));
     }
-
-    const correct = getCorrectAnswer();
-
-    // Check lengths and values
-    const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
-
-    setState(s => ({ ...s, isCorrect: isMatch }));
   };
 
   const handleAnswerChange = (index: number, value: string) => {
@@ -121,46 +166,145 @@ function App() {
     });
   };
 
-  if (state.x.length === 0) return null;
+  const handleSumaCoeffChange = (index: number, value: string) => {
+    setState(s => {
+      const newCoeffs = [...s.userSumaCoeffs];
+      newCoeffs[index] = value;
+      return { ...s, userSumaCoeffs: newCoeffs, isCorrect: null };
+    });
+  };
+
+  const handleSumaShiftChange = (index: number, value: string) => {
+    setState(s => {
+      const newShifts = [...s.userSumaShifts];
+      newShifts[index] = value;
+      return { ...s, userSumaShifts: newShifts, isCorrect: null };
+    });
+  };
+
+  // Prevent render if not initialized
+  if (state.mode === 'splot' && state.x.length === 0) return null;
+  if (state.mode === 'suma' && state.sumaX.length === 0) return null;
 
   return (
     <div className="glass-panel">
-      <h1 className="title">Trening Splotu</h1>
+      <h1 className="title">Trening CPS</h1>
       <p className="subtitle">Cyfrowe Przetwarzanie Sygnałów</p>
 
-      <div className="card">
-        <div className="operation-type">
-          Splot {state.type}
-        </div>
-
-        <div className="array-display">
-          <span className="array-label">x(n) =</span>
-          <span className="array-values">[{state.x.join(', ')}]</span>
-        </div>
-
-        <div className="array-display">
-          <span className="array-label">y(n) =</span>
-          <span className="array-values">[{state.y.join(', ')}]</span>
-        </div>
+      <div className="tab-switcher">
+        <button 
+          className={cn("tab-btn", state.mode === 'splot' && "active")}
+          onClick={() => switchMode('splot')}
+        >
+          Operacje Splotu
+        </button>
+        <button 
+          className={cn("tab-btn", state.mode === 'suma' && "active")}
+          onClick={() => switchMode('suma')}
+        >
+          Suma Ważona
+        </button>
       </div>
 
-      <div className="input-group">
-        <label className="input-label">Twoja odpowiedź (wpisz po jednej liczbie):</label>
-        <div className="answers-row">
-          {state.userAnswers.map((val, idx) => (
-            <input
-              key={idx}
-              type="text"
-              className="answer-box"
-              value={val}
-              onChange={(e) => handleAnswerChange(idx, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCheck();
-              }}
-            />
-          ))}
-        </div>
-      </div>
+      {state.mode === 'splot' ? (
+        <>
+          <div className="card">
+            <div className="operation-type">
+              Splot {state.type}
+            </div>
+
+            <div className="array-display">
+              <span className="array-label">x(n) =</span>
+              <span className="array-values">[{state.x.join(', ')}]</span>
+            </div>
+
+            <div className="array-display">
+              <span className="array-label">y(n) =</span>
+              <span className="array-values">[{state.y.join(', ')}]</span>
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Twoja odpowiedź (wpisz po jednej liczbie):</label>
+            <div className="answers-row">
+              {state.userAnswers.map((val, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  className="answer-box"
+                  value={val}
+                  onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCheck();
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="card">
+            <div className="operation-type">
+              Suma Ważona Impulsów Kroneckera
+            </div>
+
+            <div className="array-display">
+              <span className="array-label">x(n) =</span>
+              <span className="array-values">[{state.sumaX.join(', ')}]</span>
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
+              Załóż, że początek sygnału zaczyna się od n = 0.
+            </p>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Uzupełnij wzór odpowiednimi liczbami:</label>
+            <div className="formula-row">
+              <span>x(n) = </span>
+              <input
+                type="text"
+                className="formula-input"
+                value={state.userSumaCoeffs[0] || ''}
+                onChange={(e) => handleSumaCoeffChange(0, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCheck();
+                }}
+              />
+              <span>δ(n)</span>
+
+              {state.sumaX.slice(1).map((_, idx) => {
+                const globalIdx = idx + 1;
+                return (
+                  <React.Fragment key={globalIdx}>
+                    <span>+</span>
+                    <input
+                      type="text"
+                      className="formula-input"
+                      value={state.userSumaCoeffs[globalIdx] || ''}
+                      onChange={(e) => handleSumaCoeffChange(globalIdx, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCheck();
+                      }}
+                    />
+                    <span>δ(n - </span>
+                    <input
+                      type="text"
+                      className="formula-input shift"
+                      value={state.userSumaShifts[idx] || ''}
+                      onChange={(e) => handleSumaShiftChange(idx, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCheck();
+                      }}
+                    />
+                    <span>)</span>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="btn-group">
         <button className="btn btn-primary" onClick={handleCheck}>
@@ -175,7 +319,7 @@ function App() {
           <HelpCircle size={20} />
           {state.showHelp ? 'Ukryj podpowiedź' : 'Jak to policzyć?'}
         </button>
-        <button className="btn btn-secondary" onClick={generateProblem}>
+        <button className="btn btn-secondary" onClick={() => generateProblem()}>
           <RefreshCw size={20} />
           Nowe zadanie
         </button>
@@ -183,21 +327,35 @@ function App() {
 
       {state.showHelp && (
         <div className="help-box">
-          <h3>Jak policzyć splot na kartce?</h3>
+          <h3>Podręcznik CPS</h3>
 
-          <div className="help-section">
-            <h4>1. Splot Liniowy (długość N + M - 1)</h4>
-            <p><strong>Metoda tabelkowa:</strong> Narysuj tabelę. W nagłówkach kolumn zapisz wartości $x(n)$, a w wierszach $y(n)$. W każdej komórce wpisz iloczyn odpowiadających wartości z nagłówków. Wynikiem są <strong>sumy na przekątnych</strong> (od lewego-górnego rogu po skosie w prawo-w-dół).</p>
-          </div>
+          {state.mode === 'splot' ? (
+            <>
+              <div className="help-section">
+                <h4>1. Splot Liniowy (długość N + M - 1)</h4>
+                <p><strong>Metoda tabelkowa:</strong> Narysuj tabelę. W nagłówkach kolumn zapisz wartości $x(n)$, a w wierszach $y(n)$. W każdej komórce wpisz iloczyn odpowiadających wartości z nagłówków. Wynikiem są <strong>sumy na przekątnych</strong> (od lewego-górnego rogu po skosie w prawo-w-dół).</p>
+              </div>
 
-          <div className="help-section">
-            <h4>2. Splot Okresowy (długość = max(N, M))</h4>
-            <p>Najpierw uzupełnij krótszy ciąg zerami na końcu, tak aby oba miały długość $L$. Następnie użyj <strong>metody macierzowej</strong>:</p>
-            <ul>
-              <li>Zbuduj macierz $L \times L$ z pierwszego sygnału. Pierwsza kolumna to po prostu sygnał $x(n)$. Kolejne kolumny to cykliczne przesunięcie poprzedniej kolumny <strong>w dół</strong> o 1 pozycję.</li>
-              <li>Pomnóż tę macierz przez pionowy wektor drugiego sygnału $y(n)$. Wynikowy wektor to szukany splot Okresowy.</li>
-            </ul>
-          </div>
+              <div className="help-section">
+                <h4>2. Splot Okresowy (długość = max(N, M))</h4>
+                <p>Najpierw uzupełnij krótszy ciąg zerami na końcu, tak aby oba miały długość $L$. Następnie użyj <strong>metody macierzowej</strong>:</p>
+                <ul>
+                  <li>Zbuduj macierz $L \times L$ z pierwszego sygnału. Pierwsza kolumna to po prostu sygnał $x(n)$. Kolejne kolumny to cykliczne przesunięcie poprzedniej kolumny <strong>w dół</strong> o 1 pozycję.</li>
+                  <li>Pomnóż tę macierz przez pionowy wektor drugiego sygnału $y(n)$. Wynikowy wektor to szukany splot Okresowy.</li>
+                </ul>
+              </div>
+            </>
+          ) : (
+            <div className="help-section">
+              <h4>Suma Ważona Impulsów Kroneckera</h4>
+              <p>Dowolny dyskretny sygnał $x(n)$ można zapisać za pomocą sumy przesuniętych w czasie impulsów jednostkowych $\delta(n)$ pomnożonych przez wartości sygnału w tych punktach.</p>
+              <p>Wzór ogólny:</p>
+              <p style={{ fontFamily: 'monospace', background: 'rgba(0,0,0,0.3)', padding: '0.5rem', borderRadius: '4px' }}>
+                x(n) = ... + x(-1)δ(n+1) + x(0)δ(n) + x(1)δ(n-1) + x(2)δ(n-2) + ...
+              </p>
+              <p>Zatem dla każdego indeksu n wartość sygnału x(n) staje się współczynnikiem przed δ, a sam indeks wyznacza przesunięcie w nawiasie δ(n - k).</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -217,7 +375,14 @@ function App() {
 
       {state.showSolution && (
         <div className="solution-box">
-          Prawidłowa odpowiedź: [{getCorrectAnswer().join(', ')}]
+          {state.mode === 'splot' ? (
+            <span>Prawidłowa odpowiedź: [{getCorrectAnswer().join(', ')}]</span>
+          ) : (
+            <span>
+              Prawidłowa odpowiedź: x(n) = {state.sumaX[0]}δ(n)
+              {state.sumaX.slice(1).map((val, idx) => ` + ${val}δ(n - ${idx + 1})`).join('')}
+            </span>
+          )}
         </div>
       )}
     </div>
