@@ -69,7 +69,6 @@ const calculateCircularConvolution = (x: number[], y: number[]) => {
   return result;
 };
 
-// Complex number parser and formatter
 function parseComplex(s: string): Complex | null {
   s = s.replace(/\s+/g, '').toLowerCase().replace(/i/g, 'j');
   if (!s) return null;
@@ -127,6 +126,37 @@ function calculateDFT4(x: number[]): Complex[] {
   ];
 }
 
+// Custom Ninja Icons
+const SenseiWuIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" {...props}>
+    <path d="M 20 50 Q 50 100 80 50 Z" fill="#f8fafc" />
+    <ellipse cx="50" cy="45" rx="25" ry="18" fill="#fcd34d" />
+    <circle cx="42" cy="45" r="3" fill="#1e293b" />
+    <circle cx="58" cy="45" r="3" fill="#1e293b" />
+    <path d="M 36 40 Q 42 38 48 40" fill="none" stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
+    <path d="M 64 40 Q 58 38 52 40" fill="none" stroke="#f8fafc" strokeWidth="3" strokeLinecap="round" />
+    <path d="M 40 52 Q 50 45 60 52" fill="none" stroke="#f8fafc" strokeWidth="5" strokeLinecap="round" />
+    <path d="M 15 35 Q 50 10 85 35 Q 50 42 15 35 Z" fill="#d97706" />
+    <path d="M 15 35 Q 50 25 85 35" fill="none" stroke="#b45309" strokeWidth="2" />
+  </svg>
+);
+
+const NinjaIcon = ({ color, darkColor, className }: { color: string, darkColor: string, className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" className={className} width="24" height="24">
+    <circle cx="32" cy="32" r="28" fill={color} />
+    <ellipse cx="32" cy="30" rx="20" ry="12" fill="#fef08a" />
+    <path d="M 12 30 Q 32 45 52 30" fill="none" stroke={darkColor} strokeWidth="4" strokeLinecap="round" />
+    <path d="M 16 20 Q 32 25 48 20" fill="none" stroke={darkColor} strokeWidth="4" strokeLinecap="round" />
+    <circle cx="24" cy="28" r="3" fill="#1e293b" />
+    <circle cx="40" cy="28" r="3" fill="#1e293b" />
+    <path d="M 20 24 L 26 26" fill="none" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" />
+    <path d="M 44 24 L 38 26" fill="none" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" />
+    <path d="M 56 32 Q 62 40 58 48" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" />
+    <path d="M 56 32 Q 64 36 62 42" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" />
+  </svg>
+);
+
+
 function App() {
   const [state, setState] = useState<AppState>({
     mode: 'splot',
@@ -179,7 +209,7 @@ function App() {
         showHelp: false,
       }));
     } else if (currentMode === 'fourier') {
-      const fourierX = generateArray(4); // Typically N=4
+      const fourierX = generateArray(4);
 
       setState(s => ({
         ...s,
@@ -199,6 +229,14 @@ function App() {
 
   const switchMode = (mode: AppMode) => {
     generateProblem(mode);
+  };
+
+  const getCorrectAnswer = () => {
+    if (state.type === 'Liniowy') {
+      return calculateLinearConvolution(state.x, state.y);
+    } else {
+      return calculateCircularConvolution(state.x, state.y);
+    }
   };
 
   const handleCheck = () => {
@@ -240,277 +278,289 @@ function App() {
   if (state.mode === 'suma' && state.sumaX.length === 0) return null;
   if (state.mode === 'fourier' && state.fourierX.length === 0) return null;
 
+  // Map mode to theme class
+  let themeClass = 'theme-kai';
+  if (state.mode === 'suma') themeClass = 'theme-jay';
+  if (state.mode === 'fourier') themeClass = 'theme-lloyd';
+
   return (
-    <div className="glass-panel">
-      <h1 className="title">NinjaCPS</h1>
-      <p className="subtitle">"Never put off until tomorrow what can be done today!" ~ Sensei Wu</p>
+    <div className={cn("theme-container", themeClass)}>
+      <div className="lego-panel">
+        <h1 className="title">NinjaCPS</h1>
+        <p className="subtitle">"Never put off until tomorrow what can be done today!" ~ Sensei Wu</p>
 
-      <div className="tab-switcher" style={{ flexWrap: 'wrap' }}>
-        <button
-          className={cn("tab-btn", state.mode === 'splot' && "active")}
-          onClick={() => switchMode('splot')}
-        >
-          Operacje Splotu
-        </button>
-        <button
-          className={cn("tab-btn", state.mode === 'suma' && "active")}
-          onClick={() => switchMode('suma')}
-        >
-          Suma Ważona
-        </button>
-        <button
-          className={cn("tab-btn", state.mode === 'fourier' && "active")}
-          onClick={() => switchMode('fourier')}
-        >
-          Przekształcenie Fouriera
-        </button>
-      </div>
+        <div className="tab-switcher">
+          <button
+            className={cn("tab-btn", state.mode === 'splot' && "active")}
+            onClick={() => switchMode('splot')}
+          >
+            <NinjaIcon color="#ef4444" darkColor="#991b1b" /> Splot
+          </button>
+          <button
+            className={cn("tab-btn", state.mode === 'suma' && "active")}
+            onClick={() => switchMode('suma')}
+          >
+            <NinjaIcon color="#3b82f6" darkColor="#1e3a8a" /> Suma Ważona
+          </button>
+          <button
+            className={cn("tab-btn", state.mode === 'fourier' && "active")}
+            onClick={() => switchMode('fourier')}
+          >
+            <NinjaIcon color="#22c55e" darkColor="#15803d" /> Fourier
+          </button>
+        </div>
 
-      {state.mode === 'splot' && (
-        <>
-          <div className="card">
-            <div className="operation-type">
-              Splot {state.type}
+        {state.mode === 'splot' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Splot {state.type}
+              </div>
+              <div className="array-display">
+                <span className="array-label">x(n) =</span>
+                <span className="array-values">[{state.x.join(', ')}]</span>
+              </div>
+              <div className="array-display">
+                <span className="array-label">y(n) =</span>
+                <span className="array-values">[{state.y.join(', ')}]</span>
+              </div>
             </div>
-            <div className="array-display">
-              <span className="array-label">x(n) =</span>
-              <span className="array-values">[{state.x.join(', ')}]</span>
-            </div>
-            <div className="array-display">
-              <span className="array-label">y(n) =</span>
-              <span className="array-values">[{state.y.join(', ')}]</span>
-            </div>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Twoja odpowiedź (wpisz po jednej liczbie):</label>
-            <div className="answers-row">
-              {state.userAnswers.map((val, idx) => (
-                <input
-                  key={idx}
-                  type="text"
-                  className="answer-box"
-                  value={val}
-                  onChange={(e) => {
-                    const newAns = [...state.userAnswers];
-                    newAns[idx] = e.target.value;
-                    setState(s => ({ ...s, userAnswers: newAns, isCorrect: null }));
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCheck();
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
-      {state.mode === 'suma' && (
-        <>
-          <div className="card">
-            <div className="operation-type">
-              Suma Ważona Impulsów Kroneckera
-            </div>
-            <div className="array-display">
-              <span className="array-label">x(n) =</span>
-              <span className="array-values">[{state.sumaX.join(', ')}]</span>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-              Załóż, że początek sygnału zaczyna się od n = 0.
-            </p>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Uzupełnij wzór odpowiednimi liczbami:</label>
-            <div className="formula-row">
-              <span>x(n) = </span>
-              <input
-                type="text"
-                className="formula-input"
-                value={state.userSumaCoeffs[0] || ''}
-                onChange={(e) => {
-                  const newC = [...state.userSumaCoeffs];
-                  newC[0] = e.target.value;
-                  setState(s => ({ ...s, userSumaCoeffs: newC, isCorrect: null }));
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-              />
-              <span>δ(n)</span>
-
-              {state.sumaX.slice(1).map((_, idx) => {
-                const globalIdx = idx + 1;
-                return (
-                  <React.Fragment key={globalIdx}>
-                    <span>+</span>
-                    <input
-                      type="text"
-                      className="formula-input"
-                      value={state.userSumaCoeffs[globalIdx] || ''}
-                      onChange={(e) => {
-                        const newC = [...state.userSumaCoeffs];
-                        newC[globalIdx] = e.target.value;
-                        setState(s => ({ ...s, userSumaCoeffs: newC, isCorrect: null }));
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-                    />
-                    <span>δ(n - </span>
-                    <input
-                      type="text"
-                      className="formula-input shift"
-                      value={state.userSumaShifts[idx] || ''}
-                      onChange={(e) => {
-                        const newS = [...state.userSumaShifts];
-                        newS[idx] = e.target.value;
-                        setState(s => ({ ...s, userSumaShifts: newS, isCorrect: null }));
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-                    />
-                    <span>)</span>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      {state.mode === 'fourier' && (
-        <>
-          <div className="card">
-            <div className="operation-type">
-              Dyskretne Przekształcenie Fouriera (N=4)
-            </div>
-            <div className="array-display">
-              <span className="array-label">x[n] =</span>
-              <span className="array-values">[{state.fourierX.join(', ')}]</span>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>
-              Wpisz liczby zespolone dla prążków widma. Używaj "i" lub "j" (np. -2+2j, 10, -j).
-            </p>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Twoje odpowiedzi dla X[k]:</label>
-            <div className="answers-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '1rem' }}>
-              {state.userFourierAnswers.map((val, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ fontFamily: 'monospace', color: '#a78bfa', fontSize: '1.25rem', width: '3rem' }}>X[{idx}] = </span>
+            <div className="input-group">
+              <label className="input-label">Twoja odpowiedź (wpisz po jednej liczbie):</label>
+              <div className="answers-row">
+                {state.userAnswers.map((val, idx) => (
                   <input
+                    key={idx}
                     type="text"
-                    style={{ width: '8rem' }}
                     className="answer-box"
                     value={val}
                     onChange={(e) => {
-                      const newAns = [...state.userFourierAnswers];
+                      const newAns = [...state.userAnswers];
                       newAns[idx] = e.target.value;
-                      setState(s => ({ ...s, userFourierAnswers: newAns, isCorrect: null }));
+                      setState(s => ({ ...s, userAnswers: newAns, isCorrect: null }));
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleCheck();
                     }}
                   />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {state.mode === 'suma' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Suma Ważona Impulsów Kroneckera
+              </div>
+              <div className="array-display">
+                <span className="array-label">x(n) =</span>
+                <span className="array-values">[{state.sumaX.join(', ')}]</span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                Załóż, że początek sygnału zaczyna się od n = 0.
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Uzupełnij wzór odpowiednimi liczbami:</label>
+              <div className="formula-row">
+                <span>x(n) = </span>
+                <input
+                  type="text"
+                  className="formula-input"
+                  value={state.userSumaCoeffs[0] || ''}
+                  onChange={(e) => {
+                    const newC = [...state.userSumaCoeffs];
+                    newC[0] = e.target.value;
+                    setState(s => ({ ...s, userSumaCoeffs: newC, isCorrect: null }));
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                />
+                <span>δ(n)</span>
+
+                {state.sumaX.slice(1).map((_, idx) => {
+                  const globalIdx = idx + 1;
+                  return (
+                    <React.Fragment key={globalIdx}>
+                      <span>+</span>
+                      <input
+                        type="text"
+                        className="formula-input"
+                        value={state.userSumaCoeffs[globalIdx] || ''}
+                        onChange={(e) => {
+                          const newC = [...state.userSumaCoeffs];
+                          newC[globalIdx] = e.target.value;
+                          setState(s => ({ ...s, userSumaCoeffs: newC, isCorrect: null }));
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                      />
+                      <span>δ(n - </span>
+                      <input
+                        type="text"
+                        className="formula-input shift"
+                        value={state.userSumaShifts[idx] || ''}
+                        onChange={(e) => {
+                          const newS = [...state.userSumaShifts];
+                          newS[idx] = e.target.value;
+                          setState(s => ({ ...s, userSumaShifts: newS, isCorrect: null }));
+                        }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                      />
+                      <span>)</span>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {state.mode === 'fourier' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Dyskretne Przekształcenie Fouriera (N=4)
+              </div>
+              <div className="array-display">
+                <span className="array-label">x[n] =</span>
+                <span className="array-values">[{state.fourierX.join(', ')}]</span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                Wpisz liczby zespolone dla prążków widma. Używaj "i" lub "j" (np. -2+2j, 10, -j).
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Twoje odpowiedzi dla X[k]:</label>
+              <div className="answers-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '1rem' }}>
+                {state.userFourierAnswers.map((val, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <span style={{ fontFamily: 'Fira Code', color: 'var(--text-dark)', fontSize: '1.25rem', width: '3rem', fontWeight: 800 }}>X[{idx}] = </span>
+                    <input
+                      type="text"
+                      style={{ width: '8rem' }}
+                      className="answer-box"
+                      value={val}
+                      onChange={(e) => {
+                        const newAns = [...state.userFourierAnswers];
+                        newAns[idx] = e.target.value;
+                        setState(s => ({ ...s, userFourierAnswers: newAns, isCorrect: null }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCheck();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+          <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCheck}>
+              <ArrowRight size={20} />
+              Sprawdź
+            </button>
+            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setState(s => ({ ...s, showSolution: !s.showSolution }))}>
+              <Eye size={20} />
+              {state.showSolution ? 'Ukryj odpowiedź' : 'Odpowiedź'}
+            </button>
+            <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => generateProblem()}>
+              <RefreshCw size={20} />
+              Nowe zadanie
+            </button>
+          </div>
+          <button className="btn btn-secondary" style={{ width: '100%', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setState(s => ({ ...s, showHelp: !s.showHelp }))}>
+            <HelpCircle size={20} style={{ marginRight: '0.5rem' }} />
+            {state.showHelp ? 'Ukryj' : 'Jak to rozwiązać?'}
+          </button>
+        </div>
+
+        {state.showHelp && (
+          <div className="sensei-container">
+            <SenseiWuIcon className="sensei-avatar" />
+            <div className="help-box">
+              <h3>Sensei Wu radzi:</h3>
+
+              {state.mode === 'splot' && (
+                <>
+                  <div className="help-section">
+                    <h4>1. Splot Liniowy (długość N + M - 1)</h4>
+                    <p><strong>Metoda tabelkowa:</strong> Narysuj tabelę. W nagłówkach kolumn zapisz wartości x(n), a w wierszach y(n). W każdej komórce wpisz iloczyn odpowiadających wartości z nagłówków. Wynikiem są <strong>sumy na przekątnych</strong> (od lewego-górnego rogu po skosie w prawo-w-dół).</p>
+                  </div>
+                  <div className="help-section">
+                    <h4>2. Splot Okresowy (długość = max(N, M))</h4>
+                    <p>Najpierw uzupełnij krótszy ciąg zerami na końcu, tak aby oba miały długość L. Następnie użyj <strong>metody macierzowej</strong>:</p>
+                    <ul>
+                      <li>Zbuduj macierz z pierwszego sygnału. Pierwsza kolumna to po prostu sygnał x(n). Kolejne kolumny to cykliczne przesunięcie poprzedniej kolumny <strong>w dół</strong> o 1 pozycję.</li>
+                      <li>Pomnóż tę macierz przez pionowy wektor drugiego sygnału y(n). Wynikowy wektor to szukany splot Okresowy.</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+
+              {state.mode === 'suma' && (
+                <div className="help-section">
+                  <h4>Suma Ważona Impulsów Kroneckera</h4>
+                  <p>Młody uczniu, każdy dyskretny sygnał x(n) można zapisać za pomocą sumy przesuniętych w czasie impulsów jednostkowych δ(n) pomnożonych przez wartości sygnału w tych punktach.</p>
+                  <p>Zatem dla każdego indeksu n wartość sygnału x(n) staje się współczynnikiem przed δ, a sam indeks wyznacza przesunięcie w nawiasie δ(n - k).</p>
                 </div>
-              ))}
+              )}
+
+              {state.mode === 'fourier' && (
+                <div className="help-section">
+                  <h4>Dyskretne Przekształcenie Fouriera (N=4)</h4>
+                  <p>Dla sygnału x[n] o długości N=4, korzystamy ze skróconych wzorów, niczym ze specjalnych technik walki:</p>
+                  <ul>
+                    <li><strong>X[0]</strong> = x[0] + x[1] + x[2] + x[3]</li>
+                    <li><strong>X[1]</strong> = (x[0] - x[2]) + j(x[3] - x[1])</li>
+                    <li><strong>X[2]</strong> = x[0] - x[1] + x[2] - x[3]</li>
+                    <li><strong>X[3]</strong> = (x[0] - x[2]) + j(x[1] - x[3])</li>
+                  </ul>
+                  <p><i>Pamiętaj, że j (lub i) to jednostka urojona. Trzymaj umysł jasny jak lód Zane'a!</i></p>
+                </div>
+              )}
             </div>
           </div>
-        </>
-      )}
+        )}
 
-      <div className="btn-group" style={{ marginTop: '1rem' }}>
-        <button className="btn btn-primary" onClick={handleCheck}>
-          <ArrowRight size={20} />
-          Sprawdź
-        </button>
-        <button className="btn btn-secondary" onClick={() => setState(s => ({ ...s, showSolution: !s.showSolution }))}>
-          <Eye size={20} />
-          {state.showSolution ? 'Ukryj rozwiązanie' : 'Pokaż rozwiązanie'}
-        </button>
-        <button className="btn btn-secondary" onClick={() => setState(s => ({ ...s, showHelp: !s.showHelp }))}>
-          <HelpCircle size={20} />
-          {state.showHelp ? 'Ukryj podpowiedź' : 'Jak to policzyć?'}
-        </button>
-        <button className="btn btn-secondary" onClick={() => generateProblem()}>
-          <RefreshCw size={20} />
-          Nowe zadanie
-        </button>
+        {state.isCorrect === true && (
+          <div className="result-banner result-success">
+            <CheckCircle size={28} />
+            <span>Świetnie! Twoja odpowiedź jest w 100% poprawna. Niezły cios!</span>
+          </div>
+        )}
+
+        {state.isCorrect === false && (
+          <div className="result-banner result-error">
+            <XCircle size={28} />
+            <span>Niestety, odpowiedź jest błędna. Podnieś się i spróbuj jeszcze raz!</span>
+          </div>
+        )}
+
+        {state.showSolution && (
+          <div className="solution-box">
+            {state.mode === 'splot' && (
+              <span>Prawidłowa odpowiedź: [{getCorrectAnswer().join(', ')}]</span>
+            )}
+            {state.mode === 'suma' && (
+              <span>
+                Prawidłowa odpowiedź: x(n) = {state.sumaX[0]}δ(n)
+                {state.sumaX.slice(1).map((val, idx) => ` + ${val}δ(n - ${idx + 1})`).join('')}
+              </span>
+            )}
+            {state.mode === 'fourier' && (
+              <span>
+                Prawidłowa odpowiedź: <br />
+                {calculateDFT4(state.fourierX).map((c, i) => <div key={i}>X[{i}] = {formatComplex(c)}</div>)}
+              </span>
+            )}
+          </div>
+        )}
       </div>
-
-      {state.showHelp && (
-        <div className="help-box">
-          <h3>Podręcznik CPS</h3>
-
-          {state.mode === 'splot' && (
-            <>
-              <div className="help-section">
-                <h4>1. Splot Liniowy (długość N + M - 1)</h4>
-                <p><strong>Metoda tabelkowa:</strong> Narysuj tabelę. W nagłówkach kolumn zapisz wartości x(n), a w wierszach y(n). W każdej komórce wpisz iloczyn odpowiadających wartości z nagłówków. Wynikiem są <strong>sumy na przekątnych</strong> (od lewego-górnego rogu po skosie w prawo-w-dół).</p>
-              </div>
-              <div className="help-section">
-                <h4>2. Splot Okresowy (długość = max(N, M))</h4>
-                <p>Najpierw uzupełnij krótszy ciąg zerami na końcu, tak aby oba miały długość L. Następnie użyj <strong>metody macierzowej</strong>:</p>
-                <ul>
-                  <li>Zbuduj macierz z pierwszego sygnału. Pierwsza kolumna to po prostu sygnał x(n). Kolejne kolumny to cykliczne przesunięcie poprzedniej kolumny <strong>w dół</strong> o 1 pozycję.</li>
-                  <li>Pomnóż tę macierz przez pionowy wektor drugiego sygnału y(n). Wynikowy wektor to szukany splot Okresowy.</li>
-                </ul>
-              </div>
-            </>
-          )}
-
-          {state.mode === 'suma' && (
-            <div className="help-section">
-              <h4>Suma Ważona Impulsów Kroneckera</h4>
-              <p>Dowolny dyskretny sygnał x(n) można zapisać za pomocą sumy przesuniętych w czasie impulsów jednostkowych δ(n) pomnożonych przez wartości sygnału w tych punktach.</p>
-              <p>Zatem dla każdego indeksu n wartość sygnału x(n) staje się współczynnikiem przed δ, a sam indeks wyznacza przesunięcie w nawiasie δ(n - k).</p>
-            </div>
-          )}
-
-          {state.mode === 'fourier' && (
-            <div className="help-section">
-              <h4>Dyskretne Przekształcenie Fouriera (N=4)</h4>
-              <p>Dla sygnału x[n] o długości N=4, korzystamy ze skróconych wzorów:</p>
-              <ul>
-                <li><strong>X[0]</strong> = x[0] + x[1] + x[2] + x[3]</li>
-                <li><strong>X[1]</strong> = (x[0] - x[2]) + j(x[3] - x[1])</li>
-                <li><strong>X[2]</strong> = x[0] - x[1] + x[2] - x[3]</li>
-                <li><strong>X[3]</strong> = (x[0] - x[2]) + j(x[1] - x[3])</li>
-              </ul>
-              <p><i>Pamiętaj, że j (lub i) to jednostka urojona.</i></p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {state.isCorrect === true && (
-        <div className="result-banner result-success">
-          <CheckCircle size={24} />
-          <span>Świetnie! Twoja odpowiedź jest w 100% poprawna.</span>
-        </div>
-      )}
-
-      {state.isCorrect === false && (
-        <div className="result-banner result-error">
-          <XCircle size={24} />
-          <span>Niestety, odpowiedź jest błędna. Spróbuj jeszcze raz!</span>
-        </div>
-      )}
-
-      {state.showSolution && (
-        <div className="solution-box">
-          {state.mode === 'splot' && (
-            <span>Prawidłowa odpowiedź: [{getCorrectAnswer().join(', ')}]</span>
-          )}
-          {state.mode === 'suma' && (
-            <span>
-              Prawidłowa odpowiedź: x(n) = {state.sumaX[0]}δ(n)
-              {state.sumaX.slice(1).map((val, idx) => ` + ${val}δ(n - ${idx + 1})`).join('')}
-            </span>
-          )}
-          {state.mode === 'fourier' && (
-            <span>
-              Prawidłowa odpowiedź: <br />
-              {calculateDFT4(state.fourierX).map((c, i) => <div key={i}>X[{i}] = {formatComplex(c)}</div>)}
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 }

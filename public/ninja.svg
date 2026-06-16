@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 130 130">
+  <defs>
+    <linearGradient id="maskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#14532d" />
+    </linearGradient>
+    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Head/Hood -->
+  <path d="M 60 10 C 20 10, 10 40, 10 70 C 10 105, 35 110, 60 110 C 85 110, 110 105, 110 70 C 110 40, 100 10, 60 10 Z" fill="url(#maskGrad)" filter="url(#shadow)" />
+  
+  <!-- Face Opening -->
+  <path d="M 25 60 C 25 40, 95 40, 95 60 C 95 80, 25 80, 25 60 Z" fill="url(#skinGrad)" filter="url(#shadow)" />
+
+  <!-- Left Eye -->
+  <ellipse cx="45" cy="60" rx="7" ry="9" fill="#0f172a" />
+  <circle cx="47" cy="57" r="3" fill="white" />
+  
+  <!-- Right Eye -->
+  <ellipse cx="75" cy="60" rx="7" ry="9" fill="#0f172a" />
+  <circle cx="77" cy="57" r="3" fill="white" />
+  
+  <!-- Angry Eyebrows -->
+  <path d="M 35 52 L 50 56" stroke="#0f172a" stroke-width="4" stroke-linecap="round" />
+  <path d="M 85 52 L 70 56" stroke="#0f172a" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Shadow below the face opening -->
+  <path d="M 15 75 Q 60 90 105 75" stroke="#064e3b" stroke-width="5" fill="none" stroke-linecap="round" />
+  
+  <!-- Headband Knot -->
+  <circle cx="105" cy="70" r="8" fill="#15803d" filter="url(#shadow)" />
+  <path d="M 105 70 Q 120 90 105 115" stroke="#15803d" stroke-width="8" fill="none" stroke-linecap="round" filter="url(#shadow)" />
+  <path d="M 105 70 Q 130 80 120 100" stroke="#15803d" stroke-width="6" fill="none" stroke-linecap="round" filter="url(#shadow)" />
+</svg>
