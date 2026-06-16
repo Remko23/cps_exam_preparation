@@ -10,6 +10,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
 type ConvolutionType = 'Liniowy' | 'Okresowy';
 type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie';
 type ProbkowanieType = 'minimalne_fs' | 'aliasing';
+type FourierType = 'dft' | 'idft';
 
 interface Complex {
   re: number;
@@ -34,8 +35,10 @@ interface AppState {
   userSumaShifts: string[];
 
   // Fourier mode
+  fourierType: FourierType;
   fourierX: number[];
   userFourierAnswers: string[];
+  userFourierAnswersIDFT: string[];
 
   // Probkowanie mode
   probkowanieType: ProbkowanieType;
@@ -181,8 +184,10 @@ function App() {
     sumaX: [],
     userSumaCoeffs: [],
     userSumaShifts: [],
+    fourierType: 'dft',
     fourierX: [],
     userFourierAnswers: [],
+    userFourierAnswersIDFT: [],
     probkowanieType: 'minimalne_fs',
     probkowanieF1: 0,
     probkowanieF2: 0,
@@ -228,13 +233,16 @@ function App() {
         showHelp: false,
       }));
     } else if (currentMode === 'fourier') {
+      const fType = Math.random() > 0.5 ? 'dft' : 'idft';
       const fourierX = generateArray(4);
 
       setState(s => ({
         ...s,
         mode: 'fourier',
+        fourierType: fType,
         fourierX,
         userFourierAnswers: new Array(4).fill(''),
+        userFourierAnswersIDFT: new Array(4).fill(''),
         isCorrect: null,
         showSolution: false,
         showHelp: false,
@@ -300,14 +308,24 @@ function App() {
       const shiftsMatch = shifts.every((val, i) => val === i + 1);
       setState(s => ({ ...s, isCorrect: coeffsMatch && shiftsMatch }));
     } else if (state.mode === 'fourier') {
-      const parsed = state.userFourierAnswers.map(parseComplex);
-      if (parsed.some(p => p === null)) {
-        alert('Wprowadź poprawne liczby zespolone (np. 10, -2+2j, -2-2i). Użyj j lub i.');
-        return;
+      if (state.fourierType === 'dft') {
+        const parsed = state.userFourierAnswers.map(parseComplex);
+        if (parsed.some(p => p === null)) {
+          alert('Wprowadź poprawne liczby zespolone (np. 10, -2+2j, -2-2i). Użyj j lub i.');
+          return;
+        }
+        const correct = calculateDFT4(state.fourierX);
+        const isMatch = parsed.every((p, i) => p!.re === correct[i].re && p!.im === correct[i].im);
+        setState(s => ({ ...s, isCorrect: isMatch }));
+      } else {
+        const parsed = state.userFourierAnswersIDFT.map(s => parseInt(s.trim(), 10));
+        if (parsed.some(isNaN)) {
+          alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+          return;
+        }
+        const isMatch = parsed.every((val, i) => val === state.fourierX[i]);
+        setState(s => ({ ...s, isCorrect: isMatch }));
       }
-      const correct = calculateDFT4(state.fourierX);
-      const isMatch = parsed.every((p, i) => p!.re === correct[i].re && p!.im === correct[i].im);
-      setState(s => ({ ...s, isCorrect: isMatch }));
     } else if (state.mode === 'probkowanie') {
       const parsed = parseInt(state.userProbkowanieAnswer.trim(), 10);
       if (isNaN(parsed)) {
@@ -480,7 +498,7 @@ function App() {
           </>
         )}
 
-        {state.mode === 'fourier' && (
+        {state.mode === 'fourier' && state.fourierType === 'dft' && (
           <>
             <div className="card">
               <div className="operation-type">
@@ -509,6 +527,49 @@ function App() {
                         const newAns = [...state.userFourierAnswers];
                         newAns[idx] = e.target.value;
                         setState(s => ({ ...s, userFourierAnswers: newAns, isCorrect: null }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCheck();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {state.mode === 'fourier' && state.fourierType === 'idft' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Odwrotne Dyskretne Przekształcenie Fouriera (IDFT)
+              </div>
+              <div className="array-display">
+                <span className="array-label">X[k] =</span>
+                <span className="array-values" style={{ fontSize: '1rem', padding: '0.75rem' }}>
+                  [{calculateDFT4(state.fourierX).map(c => formatComplex(c)).join(', ')}]
+                </span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                Wyznacz oryginalny ciąg x[n] (dla N=4) na podstawie jego widma X[k]. Wynik to zwykłe liczby całkowite!
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Twoje odpowiedzi dla x[n]:</label>
+              <div className="answers-row">
+                {state.userFourierAnswersIDFT.map((val, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontFamily: 'Fira Code', color: 'var(--text-dark)', fontSize: '1.15rem', fontWeight: 800 }}>x[{idx}]=</span>
+                    <input
+                      type="text"
+                      className="answer-box"
+                      style={{ width: '4rem', height: '3.5rem', fontSize: '1.25rem' }}
+                      value={val}
+                      onChange={(e) => {
+                        const newAns = [...state.userFourierAnswersIDFT];
+                        newAns[idx] = e.target.value;
+                        setState(s => ({ ...s, userFourierAnswersIDFT: newAns, isCorrect: null }));
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleCheck();
@@ -637,7 +698,7 @@ function App() {
                 </div>
               )}
 
-              {state.mode === 'fourier' && (
+              {state.mode === 'fourier' && state.fourierType === 'dft' && (
                 <div className="help-section">
                   <h4>Dyskretne Przekształcenie Fouriera (N=4)</h4>
                   <p>Dla sygnału x[n] o długości N=4, korzystamy ze skróconych wzorów, niczym ze specjalnych technik walki:</p>
@@ -648,6 +709,20 @@ function App() {
                     <li><strong>X[3]</strong> = (x[0] - x[2]) + j(x[1] - x[3])</li>
                   </ul>
                   <p><i>Pamiętaj, że j (lub i) to jednostka urojona. Trzymaj umysł jasny jak lód Zane'a!</i></p>
+                </div>
+              )}
+
+              {state.mode === 'fourier' && state.fourierType === 'idft' && (
+                <div className="help-section">
+                  <h4>Odwrotne Dyskretne Przekształcenie Fouriera (IDFT, N=4)</h4>
+                  <p>Aby odzyskać sygnał x[n] na podstawie X[k], korzystamy ze skróconych wzorów, ale zmieniamy znak przed <strong>j</strong> na przeciwny i <strong>dzielimy wszystko przez N (czyli 4)</strong>:</p>
+                  <ul>
+                    <li><strong>x[0]</strong> = 1/4 · (X[0] + X[1] + X[2] + X[3])</li>
+                    <li><strong>x[1]</strong> = 1/4 · (X[0] + jX[1] - X[2] - jX[3])</li>
+                    <li><strong>x[2]</strong> = 1/4 · (X[0] - X[1] + X[2] - X[3])</li>
+                    <li><strong>x[3]</strong> = 1/4 · (X[0] - jX[1] - X[2] + jX[3])</li>
+                  </ul>
+                  <p><i>Pamiętaj: gdy przemnożysz część urojoną przez 'j', stanie się ona rzeczywista, bo j² = -1. Twój końcowy wynik to będą po prostu zwykłe liczby całkowite!</i></p>
                 </div>
               )}
 
@@ -704,10 +779,15 @@ function App() {
                 {state.sumaX.slice(1).map((val, idx) => ` + ${val}δ(n - ${idx + 1})`).join('')}
               </span>
             )}
-            {state.mode === 'fourier' && (
+            {state.mode === 'fourier' && state.fourierType === 'dft' && (
               <span>
                 Prawidłowa odpowiedź: <br />
                 {calculateDFT4(state.fourierX).map((c, i) => <div key={i}>X[{i}] = {formatComplex(c)}</div>)}
+              </span>
+            )}
+            {state.mode === 'fourier' && state.fourierType === 'idft' && (
+              <span>
+                Prawidłowa odpowiedź: x[n] = [{state.fourierX.join(', ')}]
               </span>
             )}
             {state.mode === 'probkowanie' && state.probkowanieType === 'minimalne_fs' && (
