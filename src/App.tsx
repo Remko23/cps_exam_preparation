@@ -11,6 +11,7 @@ type ConvolutionType = 'Liniowy' | 'Okresowy';
 type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie';
 type ProbkowanieType = 'minimalne_fs' | 'aliasing';
 type FourierType = 'dft' | 'idft';
+type SumaType = 'wzor' | 'energia';
 
 interface Complex {
   re: number;
@@ -29,10 +30,12 @@ interface AppState {
   type: ConvolutionType;
   userAnswers: string[];
 
-  // Suma ważona mode
+  // Dyskretne mode
+  sumaType: SumaType;
   sumaX: number[];
   userSumaCoeffs: string[];
   userSumaShifts: string[];
+  userSumaEnergyAnswer: string;
 
   // Fourier mode
   fourierType: FourierType;
@@ -181,9 +184,11 @@ function App() {
     y: [],
     type: 'Liniowy',
     userAnswers: [],
+    sumaType: 'wzor',
     sumaX: [],
     userSumaCoeffs: [],
     userSumaShifts: [],
+    userSumaEnergyAnswer: '',
     fourierType: 'dft',
     fourierX: [],
     userFourierAnswers: [],
@@ -221,13 +226,16 @@ function App() {
     } else if (currentMode === 'suma') {
       const lenX = getRandomInt(4, 5);
       const sumaX = generateArray(lenX);
+      const sType = Math.random() > 0.5 ? 'wzor' : 'energia';
 
       setState(s => ({
         ...s,
         mode: 'suma',
+        sumaType: sType,
         sumaX,
         userSumaCoeffs: new Array(lenX).fill(''),
         userSumaShifts: new Array(lenX - 1).fill(''),
+        userSumaEnergyAnswer: '',
         isCorrect: null,
         showSolution: false,
         showHelp: false,
@@ -249,7 +257,7 @@ function App() {
       }));
     } else if (currentMode === 'probkowanie') {
       const pType = Math.random() > 0.5 ? 'minimalne_fs' : 'aliasing';
-      
+
       setState(s => ({
         ...s,
         mode: 'probkowanie',
@@ -297,16 +305,26 @@ function App() {
       const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
       setState(s => ({ ...s, isCorrect: isMatch }));
     } else if (state.mode === 'suma') {
-      const coeffs = state.userSumaCoeffs.map(s => parseInt(s.trim(), 10));
-      const shifts = state.userSumaShifts.map(s => parseInt(s.trim(), 10));
+      if (state.sumaType === 'wzor') {
+        const coeffs = state.userSumaCoeffs.map(s => parseInt(s.trim(), 10));
+        const shifts = state.userSumaShifts.map(s => parseInt(s.trim(), 10));
 
-      if (coeffs.some(isNaN) || shifts.some(isNaN)) {
-        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
-        return;
+        if (coeffs.some(isNaN) || shifts.some(isNaN)) {
+          alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+          return;
+        }
+        const coeffsMatch = coeffs.every((val, i) => val === state.sumaX[i]);
+        const shiftsMatch = shifts.every((val, i) => val === i + 1);
+        setState(s => ({ ...s, isCorrect: coeffsMatch && shiftsMatch }));
+      } else {
+        const parsed = parseInt(state.userSumaEnergyAnswer.trim(), 10);
+        if (isNaN(parsed)) {
+          alert('Wpisz poprawną liczbę całkowitą.');
+          return;
+        }
+        const correctEnergy = state.sumaX.reduce((acc, val) => acc + val * val, 0);
+        setState(s => ({ ...s, isCorrect: parsed === correctEnergy }));
       }
-      const coeffsMatch = coeffs.every((val, i) => val === state.sumaX[i]);
-      const shiftsMatch = shifts.every((val, i) => val === i + 1);
-      setState(s => ({ ...s, isCorrect: coeffsMatch && shiftsMatch }));
     } else if (state.mode === 'fourier') {
       if (state.fourierType === 'dft') {
         const parsed = state.userFourierAnswers.map(parseComplex);
@@ -375,7 +393,7 @@ function App() {
             className={cn("tab-btn", state.mode === 'suma' && "active")}
             onClick={() => switchMode('suma')}
           >
-            <NinjaIcon color="#3b82f6" darkColor="#1e3a8a" /> Suma Ważona
+            <NinjaIcon color="#3b82f6" darkColor="#1e3a8a" /> Dyskretne
           </button>
           <button
             className={cn("tab-btn", state.mode === 'fourier' && "active")}
@@ -430,7 +448,7 @@ function App() {
           </>
         )}
 
-        {state.mode === 'suma' && (
+        {state.mode === 'suma' && state.sumaType === 'wzor' && (
           <>
             <div className="card">
               <div className="operation-type">
@@ -493,6 +511,37 @@ function App() {
                     </React.Fragment>
                   );
                 })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {state.mode === 'suma' && state.sumaType === 'energia' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Całkowita Energia Sygnału
+              </div>
+              <div className="array-display">
+                <span className="array-label">x(n) =</span>
+                <span className="array-values">[{state.sumaX.join(', ')}]</span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                Oblicz całkowitą energię E podanego sygnału dyskretnego.
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Twoja odpowiedź:</label>
+              <div className="answers-row">
+                <span style={{ alignSelf: 'center', fontWeight: 800, fontSize: '1.5rem', color: 'var(--text-dark)' }}>E = </span>
+                <input
+                  type="text"
+                  className="answer-box"
+                  style={{ width: '6rem' }}
+                  value={state.userSumaEnergyAnswer || ''}
+                  onChange={(e) => setState(s => ({ ...s, userSumaEnergyAnswer: e.target.value, isCorrect: null }))}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                />
               </div>
             </div>
           </>
@@ -690,11 +739,23 @@ function App() {
                 </>
               )}
 
-              {state.mode === 'suma' && (
+              {state.mode === 'suma' && state.sumaType === 'wzor' && (
                 <div className="help-section">
                   <h4>Suma Ważona Impulsów Kroneckera</h4>
                   <p>Młody uczniu, każdy dyskretny sygnał x(n) można zapisać za pomocą sumy przesuniętych w czasie impulsów jednostkowych δ(n) pomnożonych przez wartości sygnału w tych punktach.</p>
                   <p>Zatem dla każdego indeksu n wartość sygnału x(n) staje się współczynnikiem przed δ, a sam indeks wyznacza przesunięcie w nawiasie δ(n - k).</p>
+                </div>
+              )}
+
+              {state.mode === 'suma' && state.sumaType === 'energia' && (
+                <div className="help-section">
+                  <h4>Całkowita Energia Sygnału Dyskretnego</h4>
+                  <p>Mistrz Błyskawic podpowiada: całkowita energia sygnału to po prostu suma kwadratów jego wszystkich próbek.</p>
+                  <ul>
+                    <li>Podnieś każdą liczbę ze zbioru x(n) do kwadratu (pamiętaj, że kwadrat liczby ujemnej jest dodatni!).</li>
+                    <li>Dodaj wszystkie uzyskane kwadraty do siebie.</li>
+                    <li>Otrzymana suma to poszukiwana energia <strong>E</strong>.</li>
+                  </ul>
                 </div>
               )}
 
@@ -773,10 +834,15 @@ function App() {
             {state.mode === 'splot' && (
               <span>Prawidłowa odpowiedź: [{getCorrectAnswer().join(', ')}]</span>
             )}
-            {state.mode === 'suma' && (
+            {state.mode === 'suma' && state.sumaType === 'wzor' && (
               <span>
                 Prawidłowa odpowiedź: x(n) = {state.sumaX[0]}δ(n)
                 {state.sumaX.slice(1).map((val, idx) => ` + ${val}δ(n - ${idx + 1})`).join('')}
+              </span>
+            )}
+            {state.mode === 'suma' && state.sumaType === 'energia' && (
+              <span>
+                Prawidłowa odpowiedź: E = {state.sumaX.reduce((acc, val) => acc + val * val, 0)}
               </span>
             )}
             {state.mode === 'fourier' && state.fourierType === 'dft' && (
