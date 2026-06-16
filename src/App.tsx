@@ -8,7 +8,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-type ConvolutionType = 'Liniowy' | 'Kołowy';
+type ConvolutionType = 'Liniowy' | 'Okresowy';
 
 interface AppState {
   x: number[];
@@ -41,7 +41,7 @@ const calculateCircularConvolution = (x: number[], y: number[]) => {
   const padX = [...x, ...new Array(N - x.length).fill(0)];
   const padY = [...y, ...new Array(N - y.length).fill(0)];
   const result = new Array(N).fill(0);
-  
+
   for (let n = 0; n < N; n++) {
     for (let k = 0; k < N; k++) {
       let idx = (n - k) % N;
@@ -67,10 +67,10 @@ function App() {
     // Lengths between 3 and 5
     const lenX = getRandomInt(3, 5);
     const lenY = getRandomInt(3, 4);
-    const type: ConvolutionType = Math.random() > 0.5 ? 'Liniowy' : 'Kołowy';
-    
+    const type: ConvolutionType = Math.random() > 0.5 ? 'Liniowy' : 'Okresowy';
+
     const expectedLen = type === 'Liniowy' ? lenX + lenY - 1 : Math.max(lenX, lenY);
-    
+
     setState({
       x: generateArray(lenX),
       y: generateArray(lenY),
@@ -106,10 +106,10 @@ function App() {
     }
 
     const correct = getCorrectAnswer();
-    
+
     // Check lengths and values
     const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
-    
+
     setState(s => ({ ...s, isCorrect: isMatch }));
   };
 
@@ -132,12 +132,12 @@ function App() {
         <div className="operation-type">
           Splot {state.type}
         </div>
-        
+
         <div className="array-display">
           <span className="array-label">x(n) =</span>
           <span className="array-values">[{state.x.join(', ')}]</span>
         </div>
-        
+
         <div className="array-display">
           <span className="array-label">y(n) =</span>
           <span className="array-values">[{state.y.join(', ')}]</span>
@@ -148,9 +148,9 @@ function App() {
         <label className="input-label">Twoja odpowiedź (wpisz po jednej liczbie):</label>
         <div className="answers-row">
           {state.userAnswers.map((val, idx) => (
-            <input 
+            <input
               key={idx}
-              type="text" 
+              type="text"
               className="answer-box"
               value={val}
               onChange={(e) => handleAnswerChange(idx, e.target.value)}
@@ -184,18 +184,18 @@ function App() {
       {state.showHelp && (
         <div className="help-box">
           <h3>Jak policzyć splot na kartce?</h3>
-          
+
           <div className="help-section">
             <h4>1. Splot Liniowy (długość N + M - 1)</h4>
             <p><strong>Metoda tabelkowa:</strong> Narysuj tabelę. W nagłówkach kolumn zapisz wartości $x(n)$, a w wierszach $y(n)$. W każdej komórce wpisz iloczyn odpowiadających wartości z nagłówków. Wynikiem są <strong>sumy na przekątnych</strong> (od lewego-górnego rogu po skosie w prawo-w-dół).</p>
           </div>
 
           <div className="help-section">
-            <h4>2. Splot Kołowy (długość = max(N, M))</h4>
+            <h4>2. Splot Okresowy (długość = max(N, M))</h4>
             <p>Najpierw uzupełnij krótszy ciąg zerami na końcu, tak aby oba miały długość $L$. Następnie użyj <strong>metody macierzowej</strong>:</p>
             <ul>
               <li>Zbuduj macierz $L \times L$ z pierwszego sygnału. Pierwsza kolumna to po prostu sygnał $x(n)$. Kolejne kolumny to cykliczne przesunięcie poprzedniej kolumny <strong>w dół</strong> o 1 pozycję.</li>
-              <li>Pomnóż tę macierz przez pionowy wektor drugiego sygnału $y(n)$. Wynikowy wektor to szukany splot kołowy.</li>
+              <li>Pomnóż tę macierz przez pionowy wektor drugiego sygnału $y(n)$. Wynikowy wektor to szukany splot Okresowy.</li>
             </ul>
           </div>
         </div>
