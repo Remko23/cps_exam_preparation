@@ -90,6 +90,8 @@ interface AppState {
   showHelp_kwantyzacjaSqnr: boolean;
   kwantyzacjaSqnrBits: number;
   userKwantyzacjaSqnr: string;
+
+  alertMsg: string | null;
 }
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -210,10 +212,10 @@ const NinjaIcon = ({ color, darkColor, className }: { color: string, darkColor: 
     <path d="M 56 32 Q 64 36 62 42" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" />
   </svg>
 );
-const TaskControls = ({ 
-  onCheck, onToggleSolution, showSolution, onToggleHelp, showHelp 
-}: { 
-  onCheck: () => void, onToggleSolution: () => void, showSolution: boolean, onToggleHelp: () => void, showHelp: boolean 
+const TaskControls = ({
+  onCheck, onToggleSolution, showSolution, onToggleHelp, showHelp
+}: {
+  onCheck: () => void, onToggleSolution: () => void, showSolution: boolean, onToggleHelp: () => void, showHelp: boolean
 }) => (
   <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
     <button className="btn btn-primary" style={{ flex: 1, padding: '0.5rem 0.25rem', fontSize: '0.9rem' }} onClick={onCheck}>
@@ -242,12 +244,30 @@ const TaskResult = ({ isCorrect }: { isCorrect: boolean | null }) => {
   );
 };
 
+const ModalAlert = ({ msg, onClose }: { msg: string | null, onClose: () => void }) => {
+  if (!msg) return null;
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+      <div className="lego-panel" style={{ maxWidth: '400px', width: '90%', textAlign: 'center', animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem', color: 'var(--theme-primary)' }}>
+          <XCircle size={64} />
+        </div>
+        <h2 style={{ fontFamily: 'Bangers', fontSize: '2.5rem', marginTop: 0, color: 'var(--theme-primary)', textShadow: '2px 2px 0 var(--gold), 3px 3px 0 var(--theme-shadow)', letterSpacing: '1px' }}>Uwaga Ninja!</h2>
+        <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-dark)', marginBottom: '1.5rem' }}>{msg}</p>
+        <button className="btn btn-primary" style={{ width: '100%', fontSize: '1.25rem', padding: '1rem' }} onClick={onClose}>
+          Zrozumiałem
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const TaskSection = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ 
-    marginBottom: '2rem', padding: '1rem', 
-    background: 'rgba(255, 255, 255, 0.03)', 
-    borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', 
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' 
+  <div style={{
+    marginBottom: '2rem', padding: '1rem',
+    background: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
   }}>
     {children}
   </div>
@@ -256,36 +276,38 @@ const TaskSection = ({ children }: { children: React.ReactNode }) => (
 function App() {
   const [state, setState] = useState<AppState>({
     mode: 'splot',
-    
+
     isCorrect_splotLiniowy: null, showSolution_splotLiniowy: false, showHelp_splotLiniowy: false,
     x_liniowy: [], y_liniowy: [], userAnswers_liniowy: [],
-    
+
     isCorrect_splotOkresowy: null, showSolution_splotOkresowy: false, showHelp_splotOkresowy: false,
     x_okresowy: [], y_okresowy: [], userAnswers_okresowy: [],
-    
+
     isCorrect_wzor: null, showSolution_wzor: false, showHelp_wzor: false,
     sumaX_wzor: [], userSumaCoeffs: [], userSumaShifts: [],
-    
+
     isCorrect_energia: null, showSolution_energia: false, showHelp_energia: false,
     sumaX_energia: [], userSumaEnergyAnswer: '',
-    
+
     isCorrect_dft: null, showSolution_dft: false, showHelp_dft: false,
     fourierX_dft: [], userFourierAnswers: [],
-    
+
     isCorrect_idft: null, showSolution_idft: false, showHelp_idft: false,
     fourierX_idft: [], userFourierAnswersIDFT: [],
-    
+
     isCorrect_nyquist: null, showSolution_nyquist: false, showHelp_nyquist: false,
     probkowanieF1: 0, probkowanieF2: 0, probkowanieA1: 0, probkowanieA2: 0, userProbkowanieNyquistAnswer: '',
-    
+
     isCorrect_aliasing: null, showSolution_aliasing: false, showHelp_aliasing: false,
     probkowanieF_in: 0, probkowanieF_s: 0, userProbkowanieAliasingAnswer: '',
-    
+
     isCorrect_kwantyzacjaKrok: null, showSolution_kwantyzacjaKrok: false, showHelp_kwantyzacjaKrok: false,
     kwantyzacjaUmin: 0, kwantyzacjaUmax: 0, kwantyzacjaBitsKrok: 0, userKwantyzacjaKrok: '',
-    
+
     isCorrect_kwantyzacjaSqnr: null, showSolution_kwantyzacjaSqnr: false, showHelp_kwantyzacjaSqnr: false,
     kwantyzacjaSqnrBits: 0, userKwantyzacjaSqnr: '',
+
+    alertMsg: null,
   });
 
   const generateProblem = (modeOverride?: AppMode) => {
@@ -319,7 +341,7 @@ function App() {
         userSumaCoeffs: new Array(lenXWzor).fill(''),
         userSumaShifts: new Array(lenXWzor - 1).fill(''),
         isCorrect_wzor: null, showSolution_wzor: false, showHelp_wzor: false,
-        
+
         sumaX_energia: generateArray(lenXEnergia),
         userSumaEnergyAnswer: '',
         isCorrect_energia: null, showSolution_energia: false, showHelp_energia: false,
@@ -331,7 +353,7 @@ function App() {
         fourierX_dft: generateArray(4),
         userFourierAnswers: new Array(4).fill(''),
         isCorrect_dft: null, showSolution_dft: false, showHelp_dft: false,
-        
+
         fourierX_idft: generateArray(4),
         userFourierAnswersIDFT: new Array(4).fill(''),
         isCorrect_idft: null, showSolution_idft: false, showHelp_idft: false,
@@ -346,7 +368,7 @@ function App() {
         probkowanieA2: getRandomInt(2, 9),
         userProbkowanieNyquistAnswer: '',
         isCorrect_nyquist: null, showSolution_nyquist: false, showHelp_nyquist: false,
-        
+
         probkowanieF_in: getRandomInt(10, 30) * 10,
         probkowanieF_s: getRandomInt(4, 9) * 10,
         userProbkowanieAliasingAnswer: '',
@@ -361,7 +383,7 @@ function App() {
         kwantyzacjaBitsKrok: getRandomInt(3, 10),
         userKwantyzacjaKrok: '',
         isCorrect_kwantyzacjaKrok: null, showSolution_kwantyzacjaKrok: false, showHelp_kwantyzacjaKrok: false,
-        
+
         kwantyzacjaSqnrBits: getRandomInt(6, 16),
         userKwantyzacjaSqnr: '',
         isCorrect_kwantyzacjaSqnr: null, showSolution_kwantyzacjaSqnr: false, showHelp_kwantyzacjaSqnr: false,
@@ -381,7 +403,7 @@ function App() {
     if (taskType === 'splotLiniowy') {
       const parsed = state.userAnswers_liniowy.map((s) => parseInt(s.trim(), 10));
       if (parsed.some(isNaN)) {
-        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.' }));
         return;
       }
       const correct = calculateLinearConvolution(state.x_liniowy, state.y_liniowy);
@@ -390,7 +412,7 @@ function App() {
     } else if (taskType === 'splotOkresowy') {
       const parsed = state.userAnswers_okresowy.map((s) => parseInt(s.trim(), 10));
       if (parsed.some(isNaN)) {
-        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.' }));
         return;
       }
       const correct = calculateCircularConvolution(state.x_okresowy, state.y_okresowy);
@@ -401,7 +423,7 @@ function App() {
       const shifts = state.userSumaShifts.map(s => parseInt(s.trim(), 10));
 
       if (coeffs.some(isNaN) || shifts.some(isNaN)) {
-        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.' }));
         return;
       }
       const coeffsMatch = coeffs.every((val, i) => val === state.sumaX_wzor[i]);
@@ -410,7 +432,7 @@ function App() {
     } else if (taskType === 'energia') {
       const parsed = parseInt(state.userSumaEnergyAnswer.trim(), 10);
       if (isNaN(parsed)) {
-        alert('Wpisz poprawną liczbę całkowitą.');
+        setState(s => ({ ...s, alertMsg: 'Wpisz poprawną liczbę całkowitą.' }));
         return;
       }
       const correctEnergy = state.sumaX_energia.reduce((acc, val) => acc + val * val, 0);
@@ -418,7 +440,7 @@ function App() {
     } else if (taskType === 'dft') {
       const parsed = state.userFourierAnswers.map(parseComplex);
       if (parsed.some(p => p === null)) {
-        alert('Wprowadź poprawne liczby zespolone (np. 10, -2+2j, -2-2i). Użyj j lub i.');
+        setState(s => ({ ...s, alertMsg: 'Wprowadź poprawne liczby zespolone (np. 10, -2+2j, -2-2i). Użyj j lub i.' }));
         return;
       }
       const correct = calculateDFT4(state.fourierX_dft);
@@ -427,7 +449,7 @@ function App() {
     } else if (taskType === 'idft') {
       const parsed = state.userFourierAnswersIDFT.map(s => parseInt(s.trim(), 10));
       if (parsed.some(isNaN)) {
-        alert('Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.');
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.' }));
         return;
       }
       const isMatch = parsed.every((val, i) => val === state.fourierX_idft[i]);
@@ -435,7 +457,7 @@ function App() {
     } else if (taskType === 'nyquist') {
       const parsed = parseInt(state.userProbkowanieNyquistAnswer.trim(), 10);
       if (isNaN(parsed)) {
-        alert('Wpisz poprawną liczbę całkowitą (w Hz).');
+        setState(s => ({ ...s, alertMsg: 'Wpisz poprawną liczbę całkowitą (w Hz).' }));
         return;
       }
       const maxF = Math.max(state.probkowanieF1, state.probkowanieF2);
@@ -444,7 +466,7 @@ function App() {
     } else if (taskType === 'aliasing') {
       const parsed = parseInt(state.userProbkowanieAliasingAnswer.trim(), 10);
       if (isNaN(parsed)) {
-        alert('Wpisz poprawną liczbę całkowitą (w Hz).');
+        setState(s => ({ ...s, alertMsg: 'Wpisz poprawną liczbę całkowitą (w Hz).' }));
         return;
       }
       const correct = Math.abs(state.probkowanieF_in - state.probkowanieF_s * Math.round(state.probkowanieF_in / state.probkowanieF_s));
@@ -452,7 +474,7 @@ function App() {
     } else if (taskType === 'kwantyzacjaKrok') {
       const parsed = parseFloat(state.userKwantyzacjaKrok.trim().replace(',', '.'));
       if (isNaN(parsed)) {
-        alert('Wpisz poprawną liczbę.');
+        setState(s => ({ ...s, alertMsg: 'Wpisz poprawną liczbę.' }));
         return;
       }
       const correct = (state.kwantyzacjaUmax - state.kwantyzacjaUmin) / Math.pow(2, state.kwantyzacjaBitsKrok);
@@ -461,7 +483,7 @@ function App() {
     } else if (taskType === 'kwantyzacjaSqnr') {
       const parsed = parseFloat(state.userKwantyzacjaSqnr.trim().replace(',', '.'));
       if (isNaN(parsed)) {
-        alert('Wpisz poprawną liczbę.');
+        setState(s => ({ ...s, alertMsg: 'Wpisz poprawną liczbę.' }));
         return;
       }
       const correct = 6.02 * state.kwantyzacjaSqnrBits + 1.76;
@@ -542,13 +564,13 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('splotLiniowy')}
                 showSolution={state.showSolution_splotLiniowy} onToggleSolution={() => setState(s => ({ ...s, showSolution_splotLiniowy: !s.showSolution_splotLiniowy }))}
                 showHelp={state.showHelp_splotLiniowy} onToggleHelp={() => setState(s => ({ ...s, showHelp_splotLiniowy: !s.showHelp_splotLiniowy }))}
               />
               <TaskResult isCorrect={state.isCorrect_splotLiniowy} />
-              
+
               {state.showHelp_splotLiniowy && (
                 <div className="sensei-container" style={{ marginTop: '1rem' }}>
                   <SenseiWuIcon className="sensei-avatar" />
@@ -558,7 +580,7 @@ function App() {
                   </div>
                 </div>
               )}
-              
+
               {state.showSolution_splotLiniowy && (
                 <div className="solution-box" style={{ marginTop: '1rem' }}>
                   <span>Odpowiedź: [{calculateLinearConvolution(state.x_liniowy, state.y_liniowy).join(', ')}]</span>
@@ -595,13 +617,13 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('splotOkresowy')}
                 showSolution={state.showSolution_splotOkresowy} onToggleSolution={() => setState(s => ({ ...s, showSolution_splotOkresowy: !s.showSolution_splotOkresowy }))}
                 showHelp={state.showHelp_splotOkresowy} onToggleHelp={() => setState(s => ({ ...s, showHelp_splotOkresowy: !s.showHelp_splotOkresowy }))}
               />
               <TaskResult isCorrect={state.isCorrect_splotOkresowy} />
-              
+
               {state.showHelp_splotOkresowy && (
                 <div className="sensei-container" style={{ marginTop: '1rem' }}>
                   <SenseiWuIcon className="sensei-avatar" />
@@ -614,7 +636,7 @@ function App() {
                   </div>
                 </div>
               )}
-              
+
               {state.showSolution_splotOkresowy && (
                 <div className="solution-box" style={{ marginTop: '1rem' }}>
                   <span>Odpowiedź: [{calculateCircularConvolution(state.x_okresowy, state.y_okresowy).join(', ')}]</span>
@@ -660,14 +682,14 @@ function App() {
                   ))}
                 </div>
               </div>
-              
-              <TaskControls 
+
+              <TaskControls
                 onCheck={() => handleCheck('wzor')}
                 showSolution={state.showSolution_wzor} onToggleSolution={() => setState(s => ({ ...s, showSolution_wzor: !s.showSolution_wzor }))}
                 showHelp={state.showHelp_wzor} onToggleHelp={() => setState(s => ({ ...s, showHelp_wzor: !s.showHelp_wzor }))}
               />
               <TaskResult isCorrect={state.isCorrect_wzor} />
-              
+
               {state.showHelp_wzor && (
                 <div className="sensei-container" style={{ marginTop: '1rem' }}>
                   <SenseiWuIcon className="sensei-avatar" />
@@ -701,14 +723,14 @@ function App() {
                     onKeyDown={(e) => e.key === 'Enter' && handleCheck('energia')} />
                 </div>
               </div>
-              
-              <TaskControls 
+
+              <TaskControls
                 onCheck={() => handleCheck('energia')}
                 showSolution={state.showSolution_energia} onToggleSolution={() => setState(s => ({ ...s, showSolution_energia: !s.showSolution_energia }))}
                 showHelp={state.showHelp_energia} onToggleHelp={() => setState(s => ({ ...s, showHelp_energia: !s.showHelp_energia }))}
               />
               <TaskResult isCorrect={state.isCorrect_energia} />
-              
+
               {state.showHelp_energia && (
                 <div className="sensei-container" style={{ marginTop: '1rem' }}>
                   <SenseiWuIcon className="sensei-avatar" />
@@ -751,8 +773,8 @@ function App() {
                   ))}
                 </div>
               </div>
-              
-              <TaskControls 
+
+              <TaskControls
                 onCheck={() => handleCheck('dft')}
                 showSolution={state.showSolution_dft} onToggleSolution={() => setState(s => ({ ...s, showSolution_dft: !s.showSolution_dft }))}
                 showHelp={state.showHelp_dft} onToggleHelp={() => setState(s => ({ ...s, showHelp_dft: !s.showHelp_dft }))}
@@ -804,7 +826,7 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('idft')}
                 showSolution={state.showSolution_idft} onToggleSolution={() => setState(s => ({ ...s, showSolution_idft: !s.showSolution_idft }))}
                 showHelp={state.showHelp_idft} onToggleHelp={() => setState(s => ({ ...s, showHelp_idft: !s.showHelp_idft }))}
@@ -857,7 +879,7 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('nyquist')}
                 showSolution={state.showSolution_nyquist} onToggleSolution={() => setState(s => ({ ...s, showSolution_nyquist: !s.showSolution_nyquist }))}
                 showHelp={state.showHelp_nyquist} onToggleHelp={() => setState(s => ({ ...s, showHelp_nyquist: !s.showHelp_nyquist }))}
@@ -900,7 +922,7 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('aliasing')}
                 showSolution={state.showSolution_aliasing} onToggleSolution={() => setState(s => ({ ...s, showSolution_aliasing: !s.showSolution_aliasing }))}
                 showHelp={state.showHelp_aliasing} onToggleHelp={() => setState(s => ({ ...s, showHelp_aliasing: !s.showHelp_aliasing }))}
@@ -949,7 +971,7 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('kwantyzacjaKrok')}
                 showSolution={state.showSolution_kwantyzacjaKrok} onToggleSolution={() => setState(s => ({ ...s, showSolution_kwantyzacjaKrok: !s.showSolution_kwantyzacjaKrok }))}
                 showHelp={state.showHelp_kwantyzacjaKrok} onToggleHelp={() => setState(s => ({ ...s, showHelp_kwantyzacjaKrok: !s.showHelp_kwantyzacjaKrok }))}
@@ -993,7 +1015,7 @@ function App() {
                 </div>
               </div>
 
-              <TaskControls 
+              <TaskControls
                 onCheck={() => handleCheck('kwantyzacjaSqnr')}
                 showSolution={state.showSolution_kwantyzacjaSqnr} onToggleSolution={() => setState(s => ({ ...s, showSolution_kwantyzacjaSqnr: !s.showSolution_kwantyzacjaSqnr }))}
                 showHelp={state.showHelp_kwantyzacjaSqnr} onToggleHelp={() => setState(s => ({ ...s, showHelp_kwantyzacjaSqnr: !s.showHelp_kwantyzacjaSqnr }))}
@@ -1022,8 +1044,9 @@ function App() {
           <RefreshCw size={24} style={{ marginRight: '0.75rem' }} />
           Wylosuj Nowe Zadania
         </button>
-
       </div>
+
+      <ModalAlert msg={state.alertMsg} onClose={() => setState(s => ({ ...s, alertMsg: null }))} />
     </div>
   );
 }
