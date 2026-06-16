@@ -24,10 +24,9 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  /* Dojo background */
-  background: radial-gradient(circle at center, #991b1b, #450a0a);
-  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 40px, rgba(0,0,0,0) 40px, rgba(0,0,0,0) 80px),
-                    radial-gradient(circle at center, #991b1b, #450a0a);
+  transition: background 0.5s ease;
+  background-image: repeating-linear-gradient(90deg, var(--stripe-color, rgba(0,0,0,0.05)) 0px, var(--stripe-color, rgba(0,0,0,0.05)) 40px, transparent 40px, transparent 80px),
+                    radial-gradient(circle at center, var(--theme-shadow, #991b1b), var(--bg-dark, #450a0a));
 }
 
 #root {
@@ -44,16 +43,29 @@ body {
   --theme-primary: #dc2626;
   --theme-shadow: #991b1b;
   --theme-light: #fca5a5;
+  --bg-dark: #450a0a;
+  --stripe-color: rgba(0, 0, 0, 0.05);
 }
 .theme-jay {
   --theme-primary: #2563eb;
   --theme-shadow: #1e3a8a;
   --theme-light: #93c5fd;
+  --bg-dark: #0f172a;
+  --stripe-color: rgba(0, 0, 0, 0.05);
 }
 .theme-lloyd {
   --theme-primary: #22c55e;
   --theme-shadow: #15803d;
   --theme-light: #86efac;
+  --bg-dark: #052e16;
+  --stripe-color: rgba(0, 0, 0, 0.05);
+}
+.theme-cole {
+  --theme-primary: #334155;
+  --theme-shadow: #0f172a;
+  --theme-light: #94a3b8;
+  --bg-dark: #020617;
+  --stripe-color: rgba(255, 255, 255, 0.03);
 }
 
 .lego-panel {

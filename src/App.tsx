@@ -8,7 +8,8 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
 }
 
 type ConvolutionType = 'Liniowy' | 'Okresowy';
-type AppMode = 'splot' | 'suma' | 'fourier';
+type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie';
+type ProbkowanieType = 'minimalne_fs' | 'aliasing';
 
 interface Complex {
   re: number;
@@ -35,6 +36,16 @@ interface AppState {
   // Fourier mode
   fourierX: number[];
   userFourierAnswers: string[];
+
+  // Probkowanie mode
+  probkowanieType: ProbkowanieType;
+  probkowanieF1: number;
+  probkowanieF2: number;
+  probkowanieA1: number;
+  probkowanieA2: number;
+  probkowanieF_in: number;
+  probkowanieF_s: number;
+  userProbkowanieAnswer: string;
 }
 
 const getRandomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -172,6 +183,14 @@ function App() {
     userSumaShifts: [],
     fourierX: [],
     userFourierAnswers: [],
+    probkowanieType: 'minimalne_fs',
+    probkowanieF1: 0,
+    probkowanieF2: 0,
+    probkowanieA1: 0,
+    probkowanieA2: 0,
+    probkowanieF_in: 0,
+    probkowanieF_s: 0,
+    userProbkowanieAnswer: '',
   });
 
   const generateProblem = (modeOverride?: AppMode) => {
@@ -216,6 +235,24 @@ function App() {
         mode: 'fourier',
         fourierX,
         userFourierAnswers: new Array(4).fill(''),
+        isCorrect: null,
+        showSolution: false,
+        showHelp: false,
+      }));
+    } else if (currentMode === 'probkowanie') {
+      const pType = Math.random() > 0.5 ? 'minimalne_fs' : 'aliasing';
+      
+      setState(s => ({
+        ...s,
+        mode: 'probkowanie',
+        probkowanieType: pType,
+        probkowanieF1: getRandomInt(1, 15) * 10,
+        probkowanieF2: getRandomInt(1, 15) * 10,
+        probkowanieA1: getRandomInt(2, 9),
+        probkowanieA2: getRandomInt(2, 9),
+        probkowanieF_in: getRandomInt(10, 30) * 10,
+        probkowanieF_s: getRandomInt(4, 9) * 10,
+        userProbkowanieAnswer: '',
         isCorrect: null,
         showSolution: false,
         showHelp: false,
@@ -271,17 +308,37 @@ function App() {
       const correct = calculateDFT4(state.fourierX);
       const isMatch = parsed.every((p, i) => p!.re === correct[i].re && p!.im === correct[i].im);
       setState(s => ({ ...s, isCorrect: isMatch }));
+    } else if (state.mode === 'probkowanie') {
+      const parsed = parseInt(state.userProbkowanieAnswer.trim(), 10);
+      if (isNaN(parsed)) {
+        alert('Wpisz poprawną liczbę całkowitą (w Hz).');
+        return;
+      }
+      let correct = 0;
+      if (state.probkowanieType === 'minimalne_fs') {
+        const maxF = Math.max(state.probkowanieF1, state.probkowanieF2);
+        correct = 2 * maxF;
+      } else {
+        correct = Math.abs(state.probkowanieF_in - state.probkowanieF_s * Math.round(state.probkowanieF_in / state.probkowanieF_s));
+      }
+      setState(s => ({ ...s, isCorrect: parsed === correct }));
     }
   };
-
-  if (state.mode === 'splot' && state.x.length === 0) return null;
-  if (state.mode === 'suma' && state.sumaX.length === 0) return null;
-  if (state.mode === 'fourier' && state.fourierX.length === 0) return null;
 
   // Map mode to theme class
   let themeClass = 'theme-kai';
   if (state.mode === 'suma') themeClass = 'theme-jay';
   if (state.mode === 'fourier') themeClass = 'theme-lloyd';
+  if (state.mode === 'probkowanie') themeClass = 'theme-cole';
+
+  useEffect(() => {
+    document.body.className = themeClass;
+  }, [themeClass]);
+
+  if (state.mode === 'splot' && state.x.length === 0) return null;
+  if (state.mode === 'suma' && state.sumaX.length === 0) return null;
+  if (state.mode === 'fourier' && state.fourierX.length === 0) return null;
+  if (state.mode === 'probkowanie' && state.probkowanieF1 === 0) return null;
 
   return (
     <div className={cn("theme-container", themeClass)}>
@@ -307,6 +364,12 @@ function App() {
             onClick={() => switchMode('fourier')}
           >
             <NinjaIcon color="#22c55e" darkColor="#15803d" /> Fourier
+          </button>
+          <button
+            className={cn("tab-btn", state.mode === 'probkowanie' && "active")}
+            onClick={() => switchMode('probkowanie')}
+          >
+            <NinjaIcon color="#334155" darkColor="#0f172a" /> Próbkowanie
           </button>
         </div>
 
@@ -458,6 +521,70 @@ function App() {
           </>
         )}
 
+        {state.mode === 'probkowanie' && state.probkowanieType === 'minimalne_fs' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Twierdzenie o próbkowaniu (Nyquista)
+              </div>
+              <div className="array-display">
+                <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                  x(t) = {state.probkowanieA1}sin({state.probkowanieF1 * 2}πt) + {state.probkowanieA2}cos({state.probkowanieF2 * 2}πt)
+                </span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                Podaj minimalną częstotliwość próbkowania f<sub>s</sub>, aby uniknąć zjawiska aliasingu.
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Minimalne f<sub>s</sub>:</label>
+              <div className="answers-row">
+                <input
+                  type="text"
+                  className="answer-box"
+                  style={{ width: '8rem' }}
+                  value={state.userProbkowanieAnswer || ''}
+                  onChange={(e) => setState(s => ({ ...s, userProbkowanieAnswer: e.target.value, isCorrect: null }))}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                />
+                <span style={{ alignSelf: 'center', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-dark)' }}>Hz</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {state.mode === 'probkowanie' && state.probkowanieType === 'aliasing' && (
+          <>
+            <div className="card">
+              <div className="operation-type">
+                Zjawisko Aliasingu
+              </div>
+              <div className="array-display">
+                <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                  f<sub>in</sub> = {state.probkowanieF_in} Hz, f<sub>s</sub> = {state.probkowanieF_s} Hz
+                </span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0', fontWeight: 600 }}>
+                Sygnał wejściowy o częstotliwości f<sub>in</sub> jest próbkowany ze zbyt niską częstotliwością f<sub>s</sub>. Oblicz częstotliwość pozorną (alias) tego sygnału po rekonstrukcji.
+              </p>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Częstotliwość fałszywa (alias):</label>
+              <div className="answers-row">
+                <input
+                  type="text"
+                  className="answer-box"
+                  style={{ width: '8rem' }}
+                  value={state.userProbkowanieAnswer || ''}
+                  onChange={(e) => setState(s => ({ ...s, userProbkowanieAnswer: e.target.value, isCorrect: null }))}
+                  onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+                />
+                <span style={{ alignSelf: 'center', fontWeight: 800, fontSize: '1.25rem', color: 'var(--text-dark)' }}>Hz</span>
+              </div>
+            </div>
+          </>
+        )}
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
           <div style={{ display: 'flex', gap: '1rem', width: '100%' }}>
             <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleCheck}>
@@ -523,6 +650,31 @@ function App() {
                   <p><i>Pamiętaj, że j (lub i) to jednostka urojona. Trzymaj umysł jasny jak lód Zane'a!</i></p>
                 </div>
               )}
+
+              {state.mode === 'probkowanie' && state.probkowanieType === 'minimalne_fs' && (
+                <div className="help-section">
+                  <h4>Twierdzenie Shannona-Kotielnikowa (Nyquista)</h4>
+                  <p>Aby sygnał analogowy mógł zostać odtworzony z próbek bez zniekształceń (aliasingu), musi być próbkowany z częstotliwością co najmniej dwukrotnie większą niż jego najwyższa składowa częstotliwościowa.</p>
+                  <ul>
+                    <li>Częstotliwość maksymalna <strong>f<sub>max</sub></strong> kryje się we wzorach funkcji: sin(2πft).</li>
+                    <li>Podziel wartość widoczną przed "πt" przez 2, aby uzyskać częstotliwość <strong>f</strong> dla każdego składnika.</li>
+                    <li>Wybierz największe z obliczonych <strong>f</strong>. To Twój f<sub>max</sub>.</li>
+                    <li>Użyj niezłomnej techniki Mistrza Ziemi: <strong>f<sub>s</sub> ≥ 2 · f<sub>max</sub></strong>.</li>
+                  </ul>
+                </div>
+              )}
+
+              {state.mode === 'probkowanie' && state.probkowanieType === 'aliasing' && (
+                <div className="help-section">
+                  <h4>Zjawisko Aliasingu</h4>
+                  <p>Jeśli częstotliwość próbkowania f<sub>s</sub> jest mniejsza niż 2·f<sub>in</sub>, pojawia się częstotliwość fałszywa (alias).</p>
+                  <ul>
+                    <li>Mistrz Ziemi radzi użyć niezawodnego wzoru: <strong>f<sub>alias</sub> = | f<sub>in</sub> - N · f<sub>s</sub> |</strong></li>
+                    <li>Gdzie N to taka liczba całkowita (1, 2, 3...), która sprowadzi wynik do przedziału <strong>od 0 do f<sub>s</sub> / 2</strong>.</li>
+                    <li>W praktyce: odejmuj (lub dodawaj) f<sub>s</sub> od f<sub>in</sub> dopóki wynik (bez znaku minus) nie znajdzie się w podanym przedziale!</li>
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -556,6 +708,16 @@ function App() {
               <span>
                 Prawidłowa odpowiedź: <br />
                 {calculateDFT4(state.fourierX).map((c, i) => <div key={i}>X[{i}] = {formatComplex(c)}</div>)}
+              </span>
+            )}
+            {state.mode === 'probkowanie' && state.probkowanieType === 'minimalne_fs' && (
+              <span>
+                Prawidłowa odpowiedź: f<sub>s</sub> = {2 * Math.max(state.probkowanieF1, state.probkowanieF2)} Hz
+              </span>
+            )}
+            {state.mode === 'probkowanie' && state.probkowanieType === 'aliasing' && (
+              <span>
+                Prawidłowa odpowiedź: f<sub>alias</sub> = {Math.abs(state.probkowanieF_in - state.probkowanieF_s * Math.round(state.probkowanieF_in / state.probkowanieF_s))} Hz
               </span>
             )}
           </div>
