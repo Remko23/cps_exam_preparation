@@ -635,11 +635,21 @@ function App() {
   if (state.mode === 'filtracja' && state.filtracjaWyjscieX.length === 0) return null;
   if (state.mode === 'kompresja' && state.kompresjaHammingData.length === 0) return null;
 
+  const ninjaQuotes: Record<AppMode, string> = {
+    splot: '"Sensei once told me it\'s not the size of the ninja in a fight, but the size of the fight in the ninja" ~ Kai',
+    suma: '"ALRIGHT?! WHO TOOK MY PUDDING CUP?" ~ Jay',
+    fourier: '"Fair? Fair isn\'t a word from where I come from!" ~ Lloyd',
+    probkowanie: '"Cake is usually the answer to anything." ~ Cole',
+    kwantyzacja: '"This isn\'t about numbers, this is about family." ~ Zane',
+    filtracja: '"Welcome to my Mojo Dojo, and I Dareth YOU to challenge me!" ~ Dareth',
+    kompresja: '"I am Nya. I am the sea." ~ Nya'
+  };
+
   return (
     <div className={cn("theme-container", themeClass)}>
       <div className="lego-panel">
         <h1 className="title">NinjaCPS</h1>
-        <p className="subtitle">"Never put off until tomorrow what can be done today!" ~ Sensei Wu</p>
+        <p className="subtitle" style={{ color: 'var(--theme-primary)' }}>{ninjaQuotes[state.mode]}</p>
 
         <div className="tab-switcher" style={{ marginBottom: '2rem' }}>
           <button className={cn("tab-btn", state.mode === 'splot' && "active")} onClick={() => switchMode('splot')}>
@@ -657,11 +667,11 @@ function App() {
           <button className={cn("tab-btn", state.mode === 'kwantyzacja' && "active")} onClick={() => switchMode('kwantyzacja')}>
             <NinjaIcon color="#e2e8f0" darkColor="#64748b" /> Kwantyzacja
           </button>
-          <button className={cn("tab-btn", state.mode === 'filtracja' && "active")} onClick={() => switchMode('filtracja')}>
-            <NinjaIcon color="#a16207" darkColor="#713f12" /> Filtracja
-          </button>
           <button className={cn("tab-btn", state.mode === 'kompresja' && "active")} onClick={() => switchMode('kompresja')}>
             <NinjaIcon color="#0891b2" darkColor="#164e63" /> Kompresja
+          </button>
+          <button className={cn("tab-btn", state.mode === 'filtracja' && "active")} onClick={() => switchMode('filtracja')}>
+            <NinjaIcon color="#a16207" darkColor="#713f12" /> Filtracja
           </button>
         </div>
 
@@ -1341,9 +1351,9 @@ function App() {
               )}
               {state.showSolution_kompresjaHamming && (
                 <div className="solution-box" style={{ marginTop: '1rem' }}>
-                  <span>Odpowiedź: p1 = {state.kompresjaHammingData[0] ^ state.kompresjaHammingData[1] ^ state.kompresjaHammingData[3]}, 
-                  p2 = {state.kompresjaHammingData[0] ^ state.kompresjaHammingData[2] ^ state.kompresjaHammingData[3]}, 
-                  p3 = {state.kompresjaHammingData[1] ^ state.kompresjaHammingData[2] ^ state.kompresjaHammingData[3]}</span>
+                  <span>Odpowiedź: p1 = {state.kompresjaHammingData[0] ^ state.kompresjaHammingData[1] ^ state.kompresjaHammingData[3]},
+                    p2 = {state.kompresjaHammingData[0] ^ state.kompresjaHammingData[2] ^ state.kompresjaHammingData[3]},
+                    p3 = {state.kompresjaHammingData[1] ^ state.kompresjaHammingData[2] ^ state.kompresjaHammingData[3]}</span>
                 </div>
               )}
             </TaskSection>
@@ -1405,6 +1415,10 @@ function App() {
           <RefreshCw size={24} style={{ marginRight: '0.75rem' }} />
           Wylosuj Nowe Zadania
         </button>
+
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontStyle: 'italic', color: '#64748b' }}>
+          "Never put off until tomorrow what can be done today!" ~ Sensei Wu
+        </div>
       </div>
 
       <ModalAlert msg={state.alertMsg} onClose={() => setState(s => ({ ...s, alertMsg: null }))} />

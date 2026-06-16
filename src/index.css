@@ -156,6 +156,11 @@ body {
   font-size: 1.1rem;
 }
 
+.theme-zane .subtitle {
+  color: var(--theme-text) !important;
+  text-shadow: none;
+}
+
 .card {
   background: white;
   border-radius: 8px;
