@@ -7,6 +7,12 @@ Aplikacja do generowania zadań do nauki na egzamin z **CPS**.
 1. **Operacje Splotu**
    - Splot Liniowy
    - Splot Okresowy
+
+2. **Suma ważona**
+
+4. **Twierdzenie o próbkowaniu**
+
+4. **Przekształcenie Fouriera**
    
 Aplikacja posiada również wbudowane **wytlumaczenia** zadań - czyli instrukcje jak je policzyc.
 
@@ -29,4 +35,4 @@ Aplikacja posiada również wbudowane **wytlumaczenia** zadań - czyli instrukcj
 
 ---
 
-***"Never put off until Tomorrow what can be done today!" ~ Sensei Wu***
+***"Never put off until tomorrow what can be done today!" ~ Sensei Wu***
