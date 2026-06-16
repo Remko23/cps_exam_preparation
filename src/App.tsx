@@ -7,7 +7,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie' | 'kwantyzacja';
+type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie' | 'kwantyzacja' | 'filtracja';
 
 interface Complex {
   re: number;
@@ -90,6 +90,22 @@ interface AppState {
   showHelp_kwantyzacjaSqnr: boolean;
   kwantyzacjaSqnrBits: number;
   userKwantyzacjaSqnr: string;
+
+  // Filtracja mode
+  isCorrect_filtracjaWyjscie: boolean | null;
+  showSolution_filtracjaWyjscie: boolean;
+  showHelp_filtracjaWyjscie: boolean;
+  filtracjaWyjscieX: number[];
+  filtracjaWyjscieA: number;
+  filtracjaWyjscieB: number;
+  userFiltracjaWyjscie: string[];
+
+  isCorrect_filtracjaIIR: boolean | null;
+  showSolution_filtracjaIIR: boolean;
+  showHelp_filtracjaIIR: boolean;
+  filtracjaIIRA: number;
+  filtracjaIIRB: number;
+  userFiltracjaIIR: string[];
 
   alertMsg: string | null;
 }
@@ -307,6 +323,12 @@ function App() {
     isCorrect_kwantyzacjaSqnr: null, showSolution_kwantyzacjaSqnr: false, showHelp_kwantyzacjaSqnr: false,
     kwantyzacjaSqnrBits: 0, userKwantyzacjaSqnr: '',
 
+    isCorrect_filtracjaWyjscie: null, showSolution_filtracjaWyjscie: false, showHelp_filtracjaWyjscie: false,
+    filtracjaWyjscieX: [], filtracjaWyjscieA: 0, filtracjaWyjscieB: 0, userFiltracjaWyjscie: [],
+
+    isCorrect_filtracjaIIR: null, showSolution_filtracjaIIR: false, showHelp_filtracjaIIR: false,
+    filtracjaIIRA: 0, filtracjaIIRB: 0, userFiltracjaIIR: [],
+
     alertMsg: null,
   });
 
@@ -387,6 +409,21 @@ function App() {
         kwantyzacjaSqnrBits: getRandomInt(6, 16),
         userKwantyzacjaSqnr: '',
         isCorrect_kwantyzacjaSqnr: null, showSolution_kwantyzacjaSqnr: false, showHelp_kwantyzacjaSqnr: false,
+      }));
+    } else if (currentMode === 'filtracja') {
+      setState(s => ({
+        ...s,
+        mode: 'filtracja',
+        filtracjaWyjscieX: generateArray(4),
+        filtracjaWyjscieA: getRandomInt(1, 3),
+        filtracjaWyjscieB: getRandomInt(-2, 2) || 1,
+        userFiltracjaWyjscie: new Array(4).fill(''),
+        isCorrect_filtracjaWyjscie: null, showSolution_filtracjaWyjscie: false, showHelp_filtracjaWyjscie: false,
+
+        filtracjaIIRA: getRandomInt(1, 3),
+        filtracjaIIRB: getRandomInt(-2, 2) || 2,
+        userFiltracjaIIR: new Array(3).fill(''),
+        isCorrect_filtracjaIIR: null, showSolution_filtracjaIIR: false, showHelp_filtracjaIIR: false,
       }));
     }
   };
@@ -489,6 +526,34 @@ function App() {
       const correct = 6.02 * state.kwantyzacjaSqnrBits + 1.76;
       const isMatch = Math.abs(parsed - correct) < 0.5; // tolerancja na przyblizenia np x6 zamiast x6.02
       setState(s => ({ ...s, isCorrect_kwantyzacjaSqnr: isMatch }));
+    } else if (taskType === 'filtracjaWyjscie') {
+      const parsed = state.userFiltracjaWyjscie.map(s => parseInt(s.trim(), 10));
+      if (parsed.some(isNaN)) {
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.' }));
+        return;
+      }
+      const x = state.filtracjaWyjscieX;
+      const A = state.filtracjaWyjscieA;
+      const B = state.filtracjaWyjscieB;
+      const correct = [
+        A * x[0],
+        A * x[1] + B * x[0],
+        A * x[2] + B * x[1],
+        A * x[3] + B * x[2]
+      ];
+      const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
+      setState(s => ({ ...s, isCorrect_filtracjaWyjscie: isMatch }));
+    } else if (taskType === 'filtracjaIIR') {
+      const parsed = state.userFiltracjaIIR.map(s => parseInt(s.trim(), 10));
+      if (parsed.some(isNaN)) {
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka poprawnymi liczbami całkowitymi.' }));
+        return;
+      }
+      const A = state.filtracjaIIRA;
+      const B = state.filtracjaIIRB;
+      const correct = [A, A * B, A * B * B];
+      const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
+      setState(s => ({ ...s, isCorrect_filtracjaIIR: isMatch }));
     }
   };
   let themeClass = 'theme-kai';
@@ -496,6 +561,7 @@ function App() {
   if (state.mode === 'fourier') themeClass = 'theme-lloyd';
   if (state.mode === 'probkowanie') themeClass = 'theme-cole';
   if (state.mode === 'kwantyzacja') themeClass = 'theme-zane';
+  if (state.mode === 'filtracja') themeClass = 'theme-dareth';
 
   useEffect(() => {
     document.body.className = themeClass;
@@ -507,6 +573,7 @@ function App() {
   if (state.mode === 'fourier' && state.fourierX_dft.length === 0) return null;
   if (state.mode === 'probkowanie' && state.probkowanieF1 === 0) return null;
   if (state.mode === 'kwantyzacja' && state.kwantyzacjaBitsKrok === 0) return null;
+  if (state.mode === 'filtracja' && state.filtracjaWyjscieX.length === 0) return null;
 
   return (
     <div className={cn("theme-container", themeClass)}>
@@ -529,6 +596,9 @@ function App() {
           </button>
           <button className={cn("tab-btn", state.mode === 'kwantyzacja' && "active")} onClick={() => switchMode('kwantyzacja')}>
             <NinjaIcon color="#e2e8f0" darkColor="#64748b" /> Kwantyzacja
+          </button>
+          <button className={cn("tab-btn", state.mode === 'filtracja' && "active")} onClick={() => switchMode('filtracja')}>
+            <NinjaIcon color="#a16207" darkColor="#713f12" /> Filtracja
           </button>
         </div>
 
@@ -1034,6 +1104,125 @@ function App() {
               {state.showSolution_kwantyzacjaSqnr && (
                 <div className="solution-box" style={{ marginTop: '1rem' }}>
                   <span>Odpowiedź: SQNR ≈ {(6.02 * state.kwantyzacjaSqnrBits + 1.76).toFixed(2)} dB</span>
+                </div>
+              )}
+            </TaskSection>
+          </>
+        )}
+
+        {/* ----------------- FILTRACJA ----------------- */}
+        {state.mode === 'filtracja' && (
+          <>
+            {/* Wyjscie Task */}
+            <TaskSection>
+              <div className="card">
+                <div className="operation-type">1. Filtr FIR - Sygnał Wyjściowy</div>
+                <div className="array-display">
+                  <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                    y[n] = {state.filtracjaWyjscieA}·x[n] {state.filtracjaWyjscieB > 0 ? '+' : '-'} {Math.abs(state.filtracjaWyjscieB)}·x[n-1]
+                  </span>
+                </div>
+                <div className="array-display">
+                  <span className="array-label">x[n] =</span>
+                  <span className="array-values">[{state.filtracjaWyjscieX.join(', ')}]</span>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>Podaj cztery pierwsze próbki sygnału wyjściowego y[0], y[1], y[2], y[3]. Załóż, że x[-1] = 0.</p>
+              </div>
+              <div className="input-group">
+                <div className="answers-row">
+                  {state.userFiltracjaWyjscie.map((val, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap' }}>y[{idx}]=</span>
+                      <input type="text" className="answer-box" style={{ width: '4rem', height: '3.5rem', fontSize: '1.25rem' }} value={val}
+                        onChange={(e) => { const newAns = [...state.userFiltracjaWyjscie]; newAns[idx] = e.target.value; setState(s => ({ ...s, userFiltracjaWyjscie: newAns, isCorrect_filtracjaWyjscie: null })); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCheck('filtracjaWyjscie'); }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <TaskControls
+                onCheck={() => handleCheck('filtracjaWyjscie')}
+                showSolution={state.showSolution_filtracjaWyjscie} onToggleSolution={() => setState(s => ({ ...s, showSolution_filtracjaWyjscie: !s.showSolution_filtracjaWyjscie }))}
+                showHelp={state.showHelp_filtracjaWyjscie} onToggleHelp={() => setState(s => ({ ...s, showHelp_filtracjaWyjscie: !s.showHelp_filtracjaWyjscie }))}
+              />
+              <TaskResult isCorrect={state.isCorrect_filtracjaWyjscie} />
+
+              {state.showHelp_filtracjaWyjscie && (
+                <div className="sensei-container" style={{ marginTop: '1rem' }}>
+                  <SenseiWuIcon className="sensei-avatar" />
+                  <div className="help-box">
+                    <p>Aby obliczyć próbkę y[n], podstaw do wzoru odpowiednie wartości z tablicy x[n].</p>
+                    <ul>
+                      <li>Dla n=0: x[0] to pierwsza liczba w tablicy, a x[-1] przyjmujemy jako 0.</li>
+                      <li>Dla n=1: używasz x[1] oraz x[0], itd.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+              {state.showSolution_filtracjaWyjscie && (
+                <div className="solution-box" style={{ marginTop: '1rem' }}>
+                  <span>Odpowiedź: y[n] = {[
+                    state.filtracjaWyjscieA * state.filtracjaWyjscieX[0],
+                    state.filtracjaWyjscieA * state.filtracjaWyjscieX[1] + state.filtracjaWyjscieB * state.filtracjaWyjscieX[0],
+                    state.filtracjaWyjscieA * state.filtracjaWyjscieX[2] + state.filtracjaWyjscieB * state.filtracjaWyjscieX[1],
+                    state.filtracjaWyjscieA * state.filtracjaWyjscieX[3] + state.filtracjaWyjscieB * state.filtracjaWyjscieX[2]
+                  ].join(', ')}</span>
+                </div>
+              )}
+            </TaskSection>
+
+            {/* IIR Task */}
+            <TaskSection>
+              <div className="card">
+                <div className="operation-type">2. Odpowiedź Impulsowa (Filtr IIR)</div>
+                <div className="array-display">
+                  <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                    y[n] = {state.filtracjaIIRA}·x[n] {state.filtracjaIIRB > 0 ? '+' : '-'} {Math.abs(state.filtracjaIIRB)}·y[n-1]
+                  </span>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>Oblicz pierwsze 3 próbki odpowiedzi impulsowej filtru: h[0], h[1], h[2]. Przypominamy, że h[-1] = 0.</p>
+              </div>
+              <div className="input-group">
+                <div className="answers-row">
+                  {state.userFiltracjaIIR.map((val, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap' }}>h[{idx}]=</span>
+                      <input type="text" className="answer-box" style={{ width: '4rem', height: '3.5rem', fontSize: '1.25rem' }} value={val}
+                        onChange={(e) => { const newAns = [...state.userFiltracjaIIR]; newAns[idx] = e.target.value; setState(s => ({ ...s, userFiltracjaIIR: newAns, isCorrect_filtracjaIIR: null })); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCheck('filtracjaIIR'); }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <TaskControls
+                onCheck={() => handleCheck('filtracjaIIR')}
+                showSolution={state.showSolution_filtracjaIIR} onToggleSolution={() => setState(s => ({ ...s, showSolution_filtracjaIIR: !s.showSolution_filtracjaIIR }))}
+                showHelp={state.showHelp_filtracjaIIR} onToggleHelp={() => setState(s => ({ ...s, showHelp_filtracjaIIR: !s.showHelp_filtracjaIIR }))}
+              />
+              <TaskResult isCorrect={state.isCorrect_filtracjaIIR} />
+
+              {state.showHelp_filtracjaIIR && (
+                <div className="sensei-container" style={{ marginTop: '1rem' }}>
+                  <SenseiWuIcon className="sensei-avatar" />
+                  <div className="help-box">
+                    <p>Aby policzyć odpowiedź impulsową <strong>h[n]</strong>, wyobraź sobie, że na wejście x[n] wpada tylko jedna "1" na samym początku (dla n=0), a potem same zera.</p>
+                    <ul>
+                      <li><strong>Dla n=0:</strong> Wstawiasz jedynkę za x[0]. Poprzedniej próbki nie było (y[-1]=0). Zatem wynik to po prostu współczynnik przy x[n]: <strong>h[0] = {state.filtracjaIIRA}</strong>.</li>
+                      <li><strong>Dla n &gt; 0:</strong> Na wejściu są już same zera, więc człon z x[n] znika! Każdy kolejny wynik otrzymujesz po prostu mnożąc <strong>poprzedni wynik</strong> przez współczynnik przy y[n-1].</li>
+                      <li>Czyli <strong>h[1]</strong> = {state.filtracjaIIRB > 0 ? '' : '-'} {Math.abs(state.filtracjaIIRB)} · h[0], a <strong>h[2]</strong> = {state.filtracjaIIRB > 0 ? '' : '-'} {Math.abs(state.filtracjaIIRB)} · h[1].</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+              {state.showSolution_filtracjaIIR && (
+                <div className="solution-box" style={{ marginTop: '1rem' }}>
+                  <span>Odpowiedź: h[n] = {[
+                    state.filtracjaIIRA,
+                    state.filtracjaIIRA * state.filtracjaIIRB,
+                    state.filtracjaIIRA * state.filtracjaIIRB * state.filtracjaIIRB
+                  ].join(', ')}</span>
                 </div>
               )}
             </TaskSection>

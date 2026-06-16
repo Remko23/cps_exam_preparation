@@ -2,15 +2,17 @@
 
 :root {
   /* Ninjago General Colors */
-  --dojo-wall: #7f1d1d; /* Dark red */
-  --dojo-floor: #b45309; /* Wood */
+  --dojo-wall: #7f1d1d;
+  /* Dark red */
+  --dojo-floor: #b45309;
+  /* Wood */
   --gold: #fbbf24;
   --gold-dark: #d97706;
   --parchment: #fef3c7;
   --text-dark: #1e293b;
 
   /* Theme variables (will be overridden by active tab) */
-  --theme-primary: #dc2626; /* Default: Kai Red */
+  --theme-primary: #dc2626;
   --theme-shadow: #991b1b;
   --theme-light: #fca5a5;
   --theme-text: white;
@@ -27,8 +29,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   transition: background 0.5s ease;
-  background-image: repeating-linear-gradient(90deg, var(--stripe-color, rgba(0,0,0,0.05)) 0px, var(--stripe-color, rgba(0,0,0,0.05)) 40px, transparent 40px, transparent 80px),
-                    radial-gradient(circle at center, var(--theme-shadow, #991b1b), var(--bg-dark, #450a0a));
+  background-image: repeating-linear-gradient(90deg, var(--stripe-color, rgba(0, 0, 0, 0.05)) 0px, var(--stripe-color, rgba(0, 0, 0, 0.05)) 40px, transparent 40px, transparent 80px),
+    radial-gradient(circle at center, var(--theme-shadow, #991b1b), var(--bg-dark, #450a0a));
 }
 
 #root {
@@ -41,6 +43,7 @@ body {
 .theme-container {
   transition: all 0.3s ease;
 }
+
 .theme-kai {
   --theme-primary: #dc2626;
   --theme-shadow: #991b1b;
@@ -48,6 +51,7 @@ body {
   --bg-dark: #450a0a;
   --stripe-color: rgba(0, 0, 0, 0.05);
 }
+
 .theme-jay {
   --theme-primary: #2563eb;
   --theme-shadow: #1e3a8a;
@@ -55,6 +59,7 @@ body {
   --bg-dark: #0f172a;
   --stripe-color: rgba(0, 0, 0, 0.05);
 }
+
 .theme-lloyd {
   --theme-primary: #22c55e;
   --theme-shadow: #15803d;
@@ -62,6 +67,7 @@ body {
   --bg-dark: #052e16;
   --stripe-color: rgba(0, 0, 0, 0.05);
 }
+
 .theme-cole {
   --theme-primary: #334155;
   --theme-shadow: #0f172a;
@@ -69,6 +75,7 @@ body {
   --bg-dark: #020617;
   --stripe-color: rgba(255, 255, 255, 0.03);
 }
+
 .theme-zane {
   --theme-primary: #ffffff;
   --theme-shadow: #cbd5e1;
@@ -79,18 +86,29 @@ body {
   --theme-text-accent: #475569;
 }
 
+.theme-dareth {
+  --theme-primary: #a16207;
+  --theme-shadow: #713f12;
+  --theme-light: #fcd34d;
+  --bg-dark: #451a03;
+  --stripe-color: rgba(255, 255, 255, 0.03);
+  --theme-text: white;
+  --theme-text-accent: #fef08a;
+}
+
 .lego-panel {
   background: var(--parchment);
   border: 8px solid var(--theme-shadow);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 15px 0 rgba(0,0,0,0.4), inset 0 0 20px rgba(0,0,0,0.1);
+  box-shadow: 0 15px 0 rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.1);
   position: relative;
   transition: border-color 0.3s ease;
 }
 
 /* Lego studs decoration on panel */
-.lego-panel::before, .lego-panel::after {
+.lego-panel::before,
+.lego-panel::after {
   content: '';
   position: absolute;
   top: -16px;
@@ -100,8 +118,14 @@ body {
   border: 2px solid var(--theme-shadow);
   border-radius: 4px 4px 0 0;
 }
-.lego-panel::before { left: 40px; }
-.lego-panel::after { right: 40px; }
+
+.lego-panel::before {
+  left: 40px;
+}
+
+.lego-panel::after {
+  right: 40px;
+}
 
 .title {
   font-family: 'Bangers', cursive;
@@ -191,7 +215,7 @@ body {
   font-weight: 800;
   font-size: 1rem;
   cursor: pointer;
-  border: 2px solid rgba(0,0,0,0.2);
+  border: 2px solid rgba(0, 0, 0, 0.2);
   transition: all 0.1s ease;
   display: flex;
   align-items: center;
@@ -204,23 +228,23 @@ body {
 .btn-primary {
   background: var(--theme-primary);
   color: var(--theme-text);
-  box-shadow: 0 6px 0 var(--theme-shadow), inset 0 2px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 6px 0 var(--theme-shadow), inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
 
 .btn-primary:active {
   transform: translateY(6px);
-  box-shadow: 0 0px 0 var(--theme-shadow), inset 0 2px 0 rgba(255,255,255,0.3);
+  box-shadow: 0 0px 0 var(--theme-shadow), inset 0 2px 0 rgba(255, 255, 255, 0.3);
 }
 
 .btn-secondary {
   background: #cbd5e1;
   color: #1e293b;
-  box-shadow: 0 6px 0 #94a3b8, inset 0 2px 0 rgba(255,255,255,0.5);
+  box-shadow: 0 6px 0 #94a3b8, inset 0 2px 0 rgba(255, 255, 255, 0.5);
 }
 
 .btn-secondary:active {
   transform: translateY(6px);
-  box-shadow: 0 0px 0 #94a3b8, inset 0 2px 0 rgba(255,255,255,0.5);
+  box-shadow: 0 0px 0 #94a3b8, inset 0 2px 0 rgba(255, 255, 255, 0.5);
 }
 
 .result-banner {
@@ -262,8 +286,15 @@ body {
 }
 
 @keyframes popIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .answers-row {
@@ -285,7 +316,7 @@ body {
   color: var(--text-dark);
   font-family: 'Fira Code', monospace;
   outline: none;
-  box-shadow: inset 0 4px 0 rgba(0,0,0,0.05);
+  box-shadow: inset 0 4px 0 rgba(0, 0, 0, 0.05);
   transition: border-color 0.2s ease;
 }
 
@@ -355,7 +386,7 @@ body {
   font-family: 'Fira Code', monospace;
   font-weight: 800;
   outline: none;
-  box-shadow: inset 0 4px 0 rgba(0,0,0,0.05);
+  box-shadow: inset 0 4px 0 rgba(0, 0, 0, 0.05);
 }
 
 .formula-input:focus {
@@ -379,7 +410,7 @@ body {
   flex-shrink: 0;
   width: 80px;
   height: 80px;
-  filter: drop-shadow(0 4px 0 rgba(0,0,0,0.2));
+  filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.2));
 }
 
 .help-box {
@@ -389,7 +420,7 @@ body {
   border: 4px solid var(--gold);
   border-radius: 16px;
   position: relative;
-  box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.1);
   color: var(--text-dark);
 }
 
@@ -440,7 +471,8 @@ body {
   font-weight: 800;
 }
 
-.help-section p, .help-section ul {
+.help-section p,
+.help-section ul {
   margin: 0 0 0.5rem 0;
   font-size: 0.95rem;
   line-height: 1.6;
