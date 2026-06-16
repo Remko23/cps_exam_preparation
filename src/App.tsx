@@ -304,7 +304,7 @@ const TaskSection = ({ children }: { children: React.ReactNode }) => (
 
 function App() {
   const [state, setState] = useState<AppState>({
-    mode: 'splot',
+    mode: 'fourier',
 
     isCorrect_splotLiniowy: null, showSolution_splotLiniowy: false, showHelp_splotLiniowy: false,
     x_liniowy: [], y_liniowy: [], userAnswers_liniowy: [],
@@ -460,7 +460,7 @@ function App() {
   };
 
   useEffect(() => {
-    generateProblem('splot');
+    generateProblem('fourier');
   }, []);
 
   const switchMode = (mode: AppMode) => {
@@ -614,9 +614,9 @@ function App() {
       setState(s => ({ ...s, isCorrect_kompresjaShannon: lengthsOk && prefixFree }));
     }
   };
-  let themeClass = 'theme-kai';
+  let themeClass = 'theme-lloyd';
+  if (state.mode === 'splot') themeClass = 'theme-kai';
   if (state.mode === 'suma') themeClass = 'theme-jay';
-  if (state.mode === 'fourier') themeClass = 'theme-lloyd';
   if (state.mode === 'probkowanie') themeClass = 'theme-cole';
   if (state.mode === 'kwantyzacja') themeClass = 'theme-zane';
   if (state.mode === 'filtracja') themeClass = 'theme-dareth';
@@ -627,9 +627,9 @@ function App() {
   }, [themeClass]);
 
   // Loading safety
+  if (state.mode === 'fourier' && state.fourierX_dft.length === 0) return null;
   if (state.mode === 'splot' && state.x_liniowy.length === 0) return null;
   if (state.mode === 'suma' && state.sumaX_wzor.length === 0) return null;
-  if (state.mode === 'fourier' && state.fourierX_dft.length === 0) return null;
   if (state.mode === 'probkowanie' && state.probkowanieF1 === 0) return null;
   if (state.mode === 'kwantyzacja' && state.kwantyzacjaBitsKrok === 0) return null;
   if (state.mode === 'filtracja' && state.filtracjaWyjscieX.length === 0) return null;
@@ -652,14 +652,14 @@ function App() {
         <p className="subtitle" style={{ color: 'var(--theme-primary)' }}>{ninjaQuotes[state.mode]}</p>
 
         <div className="tab-switcher" style={{ marginBottom: '2rem' }}>
+          <button className={cn("tab-btn", state.mode === 'fourier' && "active")} onClick={() => switchMode('fourier')}>
+            <NinjaIcon color="#22c55e" darkColor="#15803d" /> Fourier
+          </button>
           <button className={cn("tab-btn", state.mode === 'splot' && "active")} onClick={() => switchMode('splot')}>
             <NinjaIcon color="#ef4444" darkColor="#991b1b" /> Splot
           </button>
           <button className={cn("tab-btn", state.mode === 'suma' && "active")} onClick={() => switchMode('suma')}>
             <NinjaIcon color="#3b82f6" darkColor="#1e3a8a" /> Dyskretne
-          </button>
-          <button className={cn("tab-btn", state.mode === 'fourier' && "active")} onClick={() => switchMode('fourier')}>
-            <NinjaIcon color="#22c55e" darkColor="#15803d" /> Fourier
           </button>
           <button className={cn("tab-btn", state.mode === 'probkowanie' && "active")} onClick={() => switchMode('probkowanie')}>
             <NinjaIcon color="#334155" darkColor="#0f172a" /> Próbkowanie
