@@ -8,13 +8,21 @@ Aplikacja do generowania zadań do nauki na egzamin z **CPS**.
    - Splot Liniowy
    - Splot Okresowy
 
-2. **Suma ważona**
+2. **Dyskretne Sygnały i Suma Ważona**
+   - Wzór sygnału na podstawie wektora próbek
+   - Całkowita energia sygnału dyskretnego
 
-3. **Twierdzenie o próbkowaniu**
-   - Zjawisko aliasingu
-   - Częstotliwość Próbkowania
+3. **Przekształcenie Fouriera**
+   - Dyskretne Przekształcenie Fouriera (DFT)
+   - Odwrotne Dyskretne Przekształcenie Fouriera (IDFT)
 
-4. **Przekształcenie Fouriera**
+4. **Próbkowanie**
+   - Częstotliwość próbkowania (Twierdzenie Nyquista)
+   - Zjawisko aliasingu (częstotliwość urojona)
+
+5. **Kwantyzacja**
+   - Obliczanie kroku kwantyzacji (rozdzielczości)
+   - Stosunek sygnału do szumu kwantyzacji (SQNR)
 
 Aplikacja posiada również wbudowane **wytlumaczenia** zadań - czyli instrukcje jak je policzyc.
 
