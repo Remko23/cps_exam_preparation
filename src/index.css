@@ -107,7 +107,7 @@ body {
   font-family: 'Bangers', cursive;
   font-size: 3.5rem;
   letter-spacing: 2px;
-  color: var(--theme-text-accent);
+  color: var(--theme-primary);
   text-shadow: 2px 2px 0 var(--gold), 4px 4px 0 var(--theme-shadow);
   margin-bottom: 0.5rem;
   text-align: center;
