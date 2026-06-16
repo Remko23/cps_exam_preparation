@@ -7,7 +7,7 @@ export function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
-type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie' | 'kwantyzacja' | 'filtracja';
+type AppMode = 'splot' | 'suma' | 'fourier' | 'probkowanie' | 'kwantyzacja' | 'filtracja' | 'kompresja';
 
 interface Complex {
   re: number;
@@ -106,6 +106,19 @@ interface AppState {
   filtracjaIIRA: number;
   filtracjaIIRB: number;
   userFiltracjaIIR: string[];
+
+  // Kompresja mode
+  isCorrect_kompresjaHamming: boolean | null;
+  showSolution_kompresjaHamming: boolean;
+  showHelp_kompresjaHamming: boolean;
+  kompresjaHammingData: number[];
+  userKompresjaHamming: string[];
+
+  isCorrect_kompresjaShannon: boolean | null;
+  showSolution_kompresjaShannon: boolean;
+  showHelp_kompresjaShannon: boolean;
+  kompresjaShannonProbs: number[];
+  userKompresjaShannon: string[];
 
   alertMsg: string | null;
 }
@@ -329,6 +342,12 @@ function App() {
     isCorrect_filtracjaIIR: null, showSolution_filtracjaIIR: false, showHelp_filtracjaIIR: false,
     filtracjaIIRA: 0, filtracjaIIRB: 0, userFiltracjaIIR: [],
 
+    isCorrect_kompresjaHamming: null, showSolution_kompresjaHamming: false, showHelp_kompresjaHamming: false,
+    kompresjaHammingData: [], userKompresjaHamming: [],
+
+    isCorrect_kompresjaShannon: null, showSolution_kompresjaShannon: false, showHelp_kompresjaShannon: false,
+    kompresjaShannonProbs: [], userKompresjaShannon: [],
+
     alertMsg: null,
   });
 
@@ -424,6 +443,18 @@ function App() {
         filtracjaIIRB: getRandomInt(-2, 2) || 2,
         userFiltracjaIIR: new Array(3).fill(''),
         isCorrect_filtracjaIIR: null, showSolution_filtracjaIIR: false, showHelp_filtracjaIIR: false,
+      }));
+    } else if (currentMode === 'kompresja') {
+      setState(s => ({
+        ...s,
+        mode: 'kompresja',
+        kompresjaHammingData: generateArray(4).map(v => Math.abs(v) % 2),
+        userKompresjaHamming: new Array(3).fill(''),
+        isCorrect_kompresjaHamming: null, showSolution_kompresjaHamming: false, showHelp_kompresjaHamming: false,
+
+        kompresjaShannonProbs: [50, 25, 12.5, 12.5],
+        userKompresjaShannon: new Array(4).fill(''),
+        isCorrect_kompresjaShannon: null, showSolution_kompresjaShannon: false, showHelp_kompresjaShannon: false,
       }));
     }
   };
@@ -554,6 +585,33 @@ function App() {
       const correct = [A, A * B, A * B * B];
       const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
       setState(s => ({ ...s, isCorrect_filtracjaIIR: isMatch }));
+    } else if (taskType === 'kompresjaHamming') {
+      const parsed = state.userKompresjaHamming.map(s => parseInt(s.trim(), 10));
+      if (parsed.some(isNaN) || parsed.some(v => v !== 0 && v !== 1)) {
+        setState(s => ({ ...s, alertMsg: 'Wypełnij wszystkie okienka bitami (0 lub 1).' }));
+        return;
+      }
+      const d = state.kompresjaHammingData;
+      const p1 = d[0] ^ d[1] ^ d[3];
+      const p2 = d[0] ^ d[2] ^ d[3];
+      const p3 = d[1] ^ d[2] ^ d[3];
+      const correct = [p1, p2, p3];
+      const isMatch = parsed.length === correct.length && parsed.every((val, i) => val === correct[i]);
+      setState(s => ({ ...s, isCorrect_kompresjaHamming: isMatch }));
+    } else if (taskType === 'kompresjaShannon') {
+      const parsed = state.userKompresjaShannon.map(s => s.trim());
+      if (parsed.some(s => !/^[01]+$/.test(s))) {
+        setState(s => ({ ...s, alertMsg: 'Kody mogą zawierać tylko 0 i 1.' }));
+        return;
+      }
+      const lengthsOk = parsed[0].length === 1 && parsed[1].length === 2 && parsed[2].length === 3 && parsed[3].length === 3;
+      let prefixFree = true;
+      for (let i = 0; i < parsed.length; i++) {
+        for (let j = 0; j < parsed.length; j++) {
+          if (i !== j && parsed[j].startsWith(parsed[i])) prefixFree = false;
+        }
+      }
+      setState(s => ({ ...s, isCorrect_kompresjaShannon: lengthsOk && prefixFree }));
     }
   };
   let themeClass = 'theme-kai';
@@ -562,6 +620,7 @@ function App() {
   if (state.mode === 'probkowanie') themeClass = 'theme-cole';
   if (state.mode === 'kwantyzacja') themeClass = 'theme-zane';
   if (state.mode === 'filtracja') themeClass = 'theme-dareth';
+  if (state.mode === 'kompresja') themeClass = 'theme-nya';
 
   useEffect(() => {
     document.body.className = themeClass;
@@ -574,6 +633,7 @@ function App() {
   if (state.mode === 'probkowanie' && state.probkowanieF1 === 0) return null;
   if (state.mode === 'kwantyzacja' && state.kwantyzacjaBitsKrok === 0) return null;
   if (state.mode === 'filtracja' && state.filtracjaWyjscieX.length === 0) return null;
+  if (state.mode === 'kompresja' && state.kompresjaHammingData.length === 0) return null;
 
   return (
     <div className={cn("theme-container", themeClass)}>
@@ -599,6 +659,9 @@ function App() {
           </button>
           <button className={cn("tab-btn", state.mode === 'filtracja' && "active")} onClick={() => switchMode('filtracja')}>
             <NinjaIcon color="#a16207" darkColor="#713f12" /> Filtracja
+          </button>
+          <button className={cn("tab-btn", state.mode === 'kompresja' && "active")} onClick={() => switchMode('kompresja')}>
+            <NinjaIcon color="#0891b2" darkColor="#164e63" /> Kompresja
           </button>
         </div>
 
@@ -1223,6 +1286,115 @@ function App() {
                     state.filtracjaIIRA * state.filtracjaIIRB,
                     state.filtracjaIIRA * state.filtracjaIIRB * state.filtracjaIIRB
                   ].join(', ')}</span>
+                </div>
+              )}
+            </TaskSection>
+          </>
+        )}
+
+        {/* ----------------- KOMPRESJA ----------------- */}
+        {state.mode === 'kompresja' && (
+          <>
+            {/* Hamming Task */}
+            <TaskSection>
+              <div className="card">
+                <div className="operation-type">1. Kodowanie Hamminga (7,4)</div>
+                <div className="array-display">
+                  <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                    Słowo informacyjne d: [{state.kompresjaHammingData.join(' ')}]
+                  </span>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>Oblicz 3 bity parzystości (p1, p2, p3) dla danych d1, d2, d3, d4.</p>
+              </div>
+              <div className="input-group">
+                <div className="answers-row">
+                  {state.userKompresjaHamming.map((val, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap' }}>p{idx + 1}=</span>
+                      <input type="text" className="answer-box" style={{ width: '4rem', height: '3.5rem', fontSize: '1.25rem' }} value={val}
+                        onChange={(e) => { const newAns = [...state.userKompresjaHamming]; newAns[idx] = e.target.value; setState(s => ({ ...s, userKompresjaHamming: newAns, isCorrect_kompresjaHamming: null })); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCheck('kompresjaHamming'); }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <TaskControls
+                onCheck={() => handleCheck('kompresjaHamming')}
+                showSolution={state.showSolution_kompresjaHamming} onToggleSolution={() => setState(s => ({ ...s, showSolution_kompresjaHamming: !s.showSolution_kompresjaHamming }))}
+                showHelp={state.showHelp_kompresjaHamming} onToggleHelp={() => setState(s => ({ ...s, showHelp_kompresjaHamming: !s.showHelp_kompresjaHamming }))}
+              />
+              <TaskResult isCorrect={state.isCorrect_kompresjaHamming} />
+
+              {state.showHelp_kompresjaHamming && (
+                <div className="sensei-container" style={{ marginTop: '1rem' }}>
+                  <SenseiWuIcon className="sensei-avatar" />
+                  <div className="help-box">
+                    <p>W standardowym kodzie Hamminga (7,4), bity parzystości wyznaczamy za pomocą operacji XOR (czy jest nieparzysta liczba jedynek):</p>
+                    <ul>
+                      <li><strong>p1</strong> zabezpiecza bity d1, d2, d4. Policz jedynki w d1, d2, d4. Jeśli jest ich nieparzysta liczba, p1=1, w przeciwnym razie p1=0.</li>
+                      <li><strong>p2</strong> zabezpiecza bity d1, d3, d4.</li>
+                      <li><strong>p3</strong> zabezpiecza bity d2, d3, d4.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+              {state.showSolution_kompresjaHamming && (
+                <div className="solution-box" style={{ marginTop: '1rem' }}>
+                  <span>Odpowiedź: p1 = {state.kompresjaHammingData[0] ^ state.kompresjaHammingData[1] ^ state.kompresjaHammingData[3]}, 
+                  p2 = {state.kompresjaHammingData[0] ^ state.kompresjaHammingData[2] ^ state.kompresjaHammingData[3]}, 
+                  p3 = {state.kompresjaHammingData[1] ^ state.kompresjaHammingData[2] ^ state.kompresjaHammingData[3]}</span>
+                </div>
+              )}
+            </TaskSection>
+
+            {/* Shannon-Fano Task */}
+            <TaskSection>
+              <div className="card">
+                <div className="operation-type">2. Kodowanie Shannona-Fano</div>
+                <div className="array-display">
+                  <span className="array-label" style={{ fontSize: '1.15rem' }}>
+                    Prawdopodobieństwa: A={state.kompresjaShannonProbs[0]}%, B={state.kompresjaShannonProbs[1]}%, C={state.kompresjaShannonProbs[2]}%, D={state.kompresjaShannonProbs[3]}%
+                  </span>
+                </div>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>Skonstruuj kod dla powyższych symboli wpisując odpowiednie ciągi binarne (złożone z 0 i 1).</p>
+              </div>
+              <div className="input-group">
+                <div className="answers-row">
+                  {['A', 'B', 'C', 'D'].map((sym, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <span style={{ fontFamily: 'Fira Code', fontSize: '1.15rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{sym}=</span>
+                      <input type="text" className="answer-box" style={{ width: '5rem', height: '3.5rem', fontSize: '1.25rem' }} value={state.userKompresjaShannon[idx]}
+                        onChange={(e) => { const newAns = [...state.userKompresjaShannon]; newAns[idx] = e.target.value; setState(s => ({ ...s, userKompresjaShannon: newAns, isCorrect_kompresjaShannon: null })); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCheck('kompresjaShannon'); }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <TaskControls
+                onCheck={() => handleCheck('kompresjaShannon')}
+                showSolution={state.showSolution_kompresjaShannon} onToggleSolution={() => setState(s => ({ ...s, showSolution_kompresjaShannon: !s.showSolution_kompresjaShannon }))}
+                showHelp={state.showHelp_kompresjaShannon} onToggleHelp={() => setState(s => ({ ...s, showHelp_kompresjaShannon: !s.showHelp_kompresjaShannon }))}
+              />
+              <TaskResult isCorrect={state.isCorrect_kompresjaShannon} />
+
+              {state.showHelp_kompresjaShannon && (
+                <div className="sensei-container" style={{ marginTop: '1rem' }}>
+                  <SenseiWuIcon className="sensei-avatar" />
+                  <div className="help-box">
+                    <p>Aby wyznaczyć kod Shannona-Fano:</p>
+                    <ul>
+                      <li>Zawsze dziel pozostałą grupę symboli na dwie części tak, aby <strong>suma prawdopodobieństw</strong> w obu częściach była <strong>jak najbardziej zbliżona do siebie</strong>.</li>
+                      <li>Pierwszy podział to A (50%) oraz B+C+D (50%). Górnej grupie (A) przypisz bit 0, a dolnej (B+C+D) bit 1. (Aplikacja zaliczy wszystkie poprawne kody prefixowe bez względu na to po której stronie dasz 0 a po której 1).</li>
+                      <li>Następnie podziel dolną grupę B+C+D: B (25%) i C+D (25%). Znowu dopisz 0 i 1. Podziel na koniec C i D.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+              {state.showSolution_kompresjaShannon && (
+                <div className="solution-box" style={{ marginTop: '1rem' }}>
+                  <span>Przykładowa odpowiedź: A=0, B=10, C=110, D=111</span>
                 </div>
               )}
             </TaskSection>
